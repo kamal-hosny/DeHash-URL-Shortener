@@ -1,29 +1,18 @@
-import Iridescence from "@/components/animation/Iridescence";
 import LoginForm from "./signin-form";
 import BackButton from "@/components/atoms/back-button";
-import  ThemeModeButton  from "@/components/atoms/ModeToggle";
-// import AppLogo from "@/components/ui/AppLogo";
+import Link from "@/components/atoms/link";
+import ThemeModeButton from "@/components/atoms/ModeToggle";
 
 const Page = () => {
   return (
-    <div className="flex h-screen text-white bg-background">
-      <h1 className="sr-only">DeHash - Sign In to Your Account</h1>
+    <div className="flex h-full text-white">
 
       {/* Left Section */}
       <div
-        className="relative flex-1 bg-gradient-to-br from-[#0a2a5e] via-[#0b3573] to-[#020617] flex items-end px-6 md:px-12 lg:px-20 pb-8 lg:pb-14 overflow-hidden"
+        className="relative flex-1 flex items-end px-6 md:px-12 lg:px-20 pb-8 lg:pb-14 overflow-hidden"
         aria-label="Hero section"
       >
-        <div className="absolute inset-0">
-          <Iridescence
-            color={[0.1, 0.45, 0.9]}
-            mouseReact={false}
-            amplitude={0.18}
-            speed={0.85}
-          />
-        </div>
-
-        {/* Header Buttons (Language + Theme) */}
+        {/* Header Buttons */}
         <div className="absolute top-6 end-6 flex items-center gap-3 z-20">
           <ThemeModeButton />
         </div>
@@ -53,16 +42,7 @@ const Page = () => {
       {/* Right Section */}
       <div className="flex-1 bg-card flex justify-center items-center py-8">
         <div className="w-[400px] max-w-full px-6">
-          {/* Logo + Title */}
           <div className="text-center mb-8 lg:mb-10">
-            <h1 className="mb-4 lg:mb-6 flex justify-center items-center">
-              {/* <AppLogo
-                width={40}
-                height={40}
-                textSize="text-3xl lg:text-4xl"
-                textWeight="font-bold"
-              /> */}
-            </h1>
             <h2 className="text-2xl lg:text-3xl font-semibold text-foreground mb-2">
               Welcome back
             </h2>
@@ -72,7 +52,6 @@ const Page = () => {
               with <span className="text-primary font-medium">DeHash</span>
             </p>
           </div>
-
           {/* OAuth Buttons */}
           <div className="flex flex-col sm:flex-row items-stretch justify-center gap-3 mb-8 max-w-md mx-auto">
             {/* GitHub */}
@@ -132,15 +111,14 @@ const Page = () => {
           {/* Login Form */}
           <LoginForm />
 
-          {/* Signup Link */}
           <div className="mt-6 text-center text-muted-foreground text-sm">
             Don’t have an account?{" "}
-            <a
+            <Link
               href="/signup"
               className="text-primary hover:underline transition-colors"
             >
               Create one
-            </a>
+            </Link>
           </div>
         </div>
       </div>

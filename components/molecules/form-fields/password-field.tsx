@@ -1,51 +1,80 @@
 import { IFormField } from "@/types/app";
 import { ValidationErrors } from "@/validations/auth";
-import React from "react";
-import { InputTypes } from "@/constants/enums";
-import TextField from "./text-field";
-import PasswordField from "./password-field";
-import Checkbox from "./checkbox";
-import { Control, useController } from "react-hook-form";
+import { Input } from "../../ui/input";
+import { useState } from "react";
+import { EyeIcon, EyeOffIcon } from "@/assets/icons";
 
-interface Props extends Omit<IFormField, "error"> {
-  error?: ValidationErrors;
-  control: Control<any>;
+
+
+
+interface Props extends IFormField {
+  error: ValidationErrors;
+}
+interface IState {
+  showPassword: boolean;
 }
 
-const FormFields = (props: Props) => {
-  const { type, name, control, error, ...rest } = props;
+const INITIAL_STATE: IState = { showPassword: false };
 
-  if (!control) {
-    return null; 
+const PasswordField = ({
+ label,
+  name,
+  placeholder,
+  disabled,
+  autoFocus,
+  error,
+  defaultValue,
+}: Props) => {
+  const [state, setState] = useState<IState>(INITIAL_STATE);
+  const { showPassword } = state;
+  const handleClickShowPassword = () => setState((prevState) => ({
+    ...prevState,
+    showPassword: !prevState.showPassword,
+  }))
+  const handleMouseDownPassword = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
   }
 
-  const { field } = useController({
-    name,
-    control,
-  });
+    return (
+<div className="space-y-2">
+        <label htmlFor={name} className="capitalize text-foreground ">
+            {label}
+        </label>
+        <div className="relative flex items-center">
+            <Input 
+           type={showPassword ? "text" : "password"}
+          placeholder={placeholder}
+          disabled={disabled}
+          autoFocus={autoFocus}
+          autoComplete="off"
+          name={name}
+          id={name}
+          defaultValue={defaultValue}
+            />
 
-  const fieldProps = {
-    ...rest,
-    ...field,
-    name,
-    type,
-    error,
-  };
-
-  const renderField = (): React.ReactNode => {
-    if (type === InputTypes.TEXT || type === InputTypes.EMAIL) {
-      return <TextField {...fieldProps} />;
-    }
-    if (type === InputTypes.PASSWORD) {
-      return <PasswordField {...fieldProps} />;
-    }
-    if (type === InputTypes.CHECKBOX) {
-      return <Checkbox {...fieldProps} />;
-    }
-    return <TextField {...fieldProps} />;
-  };
-
-  return <>{renderField()}</>;
-};
-
-export default FormFields;
+            <button
+            type="button"
+            onClick={handleClickShowPassword}
+            onMouseDown={handleMouseDownPassword}
+            className={`absolute end-3`}
+            >
+              {showPassword ? (
+            <EyeOffIcon className="h-4 w-4" />
+          ) : (
+            <EyeIcon className="h-4 w-4" />
+          )}
+            </button>
+        </div>
+        {error && error[name] && (
+            <p 
+            className={`text-accent mt-2 text-sm font-medium ${
+                error[name] ? "text-destructive" : ""
+            }`}
+            >
+                {error[name]}
+            </p>
+        )}
+</div>
+    )
+}
+export default PasswordField;

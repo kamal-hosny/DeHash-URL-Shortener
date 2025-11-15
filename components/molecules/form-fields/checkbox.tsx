@@ -20,7 +20,7 @@ const Checkbox = ({ onClick, checked, label, name }: Props) => {
         checked={checked}
       />
       {label && (
-        <Label htmlFor={name} className="text-sm font-normal">
+        <Label htmlFor={name} className="text-sm font-normal text-foreground">
           {label}
         </Label>
       )}

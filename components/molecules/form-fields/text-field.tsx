@@ -29,7 +29,7 @@ const TextField = ({
 }) => {
     return (
  <div className="space-y-2">
-      <Label htmlFor={name} className="capitalize text-black mb-2">
+      <Label htmlFor={name} className="capitalize text-foreground mb-2">
         {label}
       </Label>
       <Input

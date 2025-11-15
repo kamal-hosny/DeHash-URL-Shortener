@@ -20,15 +20,15 @@ export default function ModeToggle() {
     <button
       onClick={() => setTheme(isDark ? "light" : "dark")}
       aria-label="Toggle theme"
-      className="
-        p-2 rounded-md
-        bg-transparent
-        hover:bg-neutral-200/40 dark:hover:bg-neutral-700/40
-        transition-colors duration-200
-      "
+      className={`
+        w-10 h-10 flex items-center justify-center rounded-md
+        border border-border shadow-sm
+        backdrop-blur-md transition-colors duration-200
+        ${isDark ? "bg-neutral-800/70 hover:bg-neutral-700/70" : "bg-white/70 hover:bg-neutral-200/70"}
+      `}
     >
       {isDark ? (
-        <Moon className="w-5 h-5 text-neutral-300" />
+        <Moon className="w-5 h-5 text-neutral-200" />
       ) : (
         <Sun className="w-5 h-5 text-neutral-700" />
       )}
