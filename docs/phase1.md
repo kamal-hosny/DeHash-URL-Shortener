@@ -429,7 +429,7 @@ npm test  # Run tests
 3. Create a new database (default: `neondb`)
 4. Copy the connection string
 
-### 2.2 Drizzle ORM Configuration
+### 2.2 Drizzle ORM 
 
 Create `drizzle.config.ts`:
 ```typescript

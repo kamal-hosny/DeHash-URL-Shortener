@@ -42,3 +42,15 @@ export enum InputTypes {
     FORGOT_PASSWORD = "forgot-password",
     RESET_PASSWORD = "reset-password",
   }
+
+  export enum Routes {
+    AUTH = "auth",
+    DASHBOARD = "dashboard",
+    ADMIN = "admin",
+  }
+  
+  export enum Environments {
+    DEV = "development",
+    PROD = "production",
+    TEST = "test",
+  }
