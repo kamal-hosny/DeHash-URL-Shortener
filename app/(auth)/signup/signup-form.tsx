@@ -50,42 +50,44 @@ export default function SignupForm() {
     [router, setError]
   );
 
+  const getFieldError = (field: keyof SignupFormData) => {
+    const message = errors[field]?.message;
+
+    if (!message) return undefined;
+
+    return {
+      [field]: [message],
+    };
+  };
+
   const formFields = [
     {
       name: "name",
       label: "Full Name",
       type: "text" as const,
       placeholder: "Enter your name",
-      error: errors.name?.message
-        ? { name: [errors.name.message] }
-        : undefined,
+      error: getFieldError("name"),
     },
     {
       name: "email",
       label: "Email",
       type: "email" as const,
       placeholder: "Enter your email",
-      error: errors.email?.message
-        ? { email: [errors.email.message] }
-        : undefined,
+      error: getFieldError("email"),
     },
     {
       name: "password",
       label: "Password",
       type: "password" as const,
       placeholder: "••••••••",
-      error: errors.password?.message
-        ? { password: [errors.password.message] }
-        : undefined,
+      error: getFieldError("password"),
     },
     {
       name: "confirmPassword",
       label: "Confirm Password",
       type: "password" as const,
       placeholder: "••••••••",
-      error: errors.confirmPassword?.message
-        ? { confirmPassword: [errors.confirmPassword.message] }
-        : undefined,
+      error: getFieldError("confirmPassword"),
     },
   ];
 
