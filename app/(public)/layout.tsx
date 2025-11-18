@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+
 import Navbar from "@/components/organisms/Navbar";
 import { ThemeProvider } from "@/providers/theme-provider";
 import Footer from "@/components/organisms/Footer";
@@ -17,7 +17,9 @@ export default function PublicLayout({
         disableTransitionOnChange
       >
         <Navbar />
+        <div className="pt-16">
         {children}
+        </div>
         <Footer />
       </ThemeProvider>
     </div>

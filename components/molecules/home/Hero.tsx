@@ -7,7 +7,7 @@ export default function Hero() {
   const [url, setUrl] = useState("");
 
   return (
-    <div className="relative pt-16">
+    <div className="relative">
       {/* particles */}
       <div className="absolute top-0 left-0 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse"></div>
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
