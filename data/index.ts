@@ -1,3 +1,5 @@
+import { Zap, Rocket, Crown } from "@/assets/icons/index";
+
 export const testimonials = [
     {
       name: "Sarah Johnson",
@@ -75,5 +77,63 @@ export const faqs = [
       question: "Do you offer QR codes?",
       answer:
         "Yes! All plans include QR code generation for your shortened links. You can generate, view, and download QR codes for any of your links directly from your dashboard. This is perfect for print materials, business cards, or offline marketing campaigns.",
+    },
+  ];
+
+  export  const plans = [
+    {
+      name: "Free",
+      description: "Kickstart your short-link journey in minutes.",
+      icon: Zap,
+      gradient: "from-blue-500/10 via-cyan-500/10 to-transparent",
+      accent: "text-blue-500",
+      badge: "Starter",
+      price: { monthly: 0, yearly: 0 },
+      highlight: "Great for testing ideas",
+      cta: "Get started",
+      features: [
+        "50 short links / month",
+        "Auto-generated slugs",
+        "Basic analytics (7-day history)",
+        "QR code generator",
+        "Link expiration rules",
+      ],
+    },
+    {
+      name: "Pro",
+      description: "Scale campaigns with richer analytics & automation.",
+      icon: Rocket,
+      gradient: "from-purple-500/10 via-pink-500/10 to-transparent",
+      accent: "text-purple-500",
+      badge: "Most popular",
+      price: { monthly: 12, yearly: 108 }, // 25% off when yearly (charged upfront)
+      highlight: "Advanced insight suite",
+      cta: "Start free trial",
+      features: [
+        "2,000 short links / month",
+        "Custom branded domains",
+        "Extended analytics (90-day history)",
+        "Priority inbox support",
+        "Bulk upload & API access",
+      ],
+      popular: true,
+    },
+    {
+      name: "Enterprise",
+      description: "Custom-fit security, governance, and support.",
+      icon: Crown,
+      gradient: "from-emerald-500/10 via-teal-500/10 to-transparent",
+      accent: "text-emerald-500",
+      badge: "Custom",
+      price: { monthly: null, yearly: null },
+      highlight: "SLA-backed delivery",
+      cta: "Talk to sales",
+      features: [
+        "Unlimited links & workspaces",
+        "White-label experience",
+        "Dedicated success manager",
+        "SSO / SCIM provisioning",
+        "24/7 premium support",
+      ],
     },
   ];
