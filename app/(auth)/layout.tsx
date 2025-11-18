@@ -8,7 +8,7 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative flex h-screen bg-background overflow-hidden">
+    <div className="relative flex flex-col h-screen bg-background overflow-hidden">
 
       {/* 🔥 BACKGROUND ANIMATION */}
       <div className="absolute inset-0 z-0">
@@ -21,7 +21,7 @@ export default function AuthLayout({
       </div>
 
       {/* Page Content */}
-      <div className="relative z-10 flex-1 h-full">
+      <div className="relative z-10 flex-1 h-full overflow-y-auto">
         {children}
       </div>
     </div>

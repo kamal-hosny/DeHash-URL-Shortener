@@ -1,21 +1,17 @@
 import LoginForm from "./signin-form";
 import BackButton from "@/components/atoms/back-button";
 import Link from "@/components/atoms/link";
-import ThemeModeButton from "@/components/atoms/ModeToggle";
+
 
 const Page = () => {
   return (
-    <div className="flex h-full text-white">
+    <div className="flex flex-col lg:flex-row h-full text-white">
 
       {/* Left Section */}
       <div
-        className="relative flex-1 flex items-end px-6 md:px-12 lg:px-20 pb-8 lg:pb-14 overflow-hidden"
+        className="hidden lg:flex relative flex-1 flex items-end px-6 md:px-12 lg:px-20 pb-8 lg:pb-14 overflow-hidden"
         aria-label="Hero section"
       >
-        {/* Header Buttons */}
-        <div className="absolute top-6 end-6 flex items-center gap-3 z-20">
-          <ThemeModeButton />
-        </div>
         <div className="absolute top-6 start-6 flex items-center gap-3 z-20">
           <BackButton />
         </div>
@@ -40,9 +36,26 @@ const Page = () => {
       </div>
 
       {/* Right Section */}
-      <div className="flex-1 bg-card flex justify-center items-center py-8">
-        <div className="w-[400px] max-w-full px-6">
-          <div className="text-center mb-8 lg:mb-10">
+      <div className="flex-1 bg-card flex justify-center items-center py-8 lg:py-8">
+        <div className="w-full max-w-[400px] px-6">
+          
+          {/* Mobile Header */}
+          <div className="lg:hidden mb-6">
+            <div className="flex items-center justify-between mb-6">
+              <BackButton />
+
+            </div>
+            <div className="text-center space-y-2 mb-6">
+              <h1 className="text-3xl font-semibold text-foreground">
+                Welcome back
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Sign in to continue with DeHash
+              </p>
+            </div>
+          </div>
+          
+          <div className="hidden lg:block text-center mb-8 lg:mb-10">
             <h2 className="text-2xl lg:text-3xl font-semibold text-foreground mb-2">
               Welcome back
             </h2>
@@ -53,7 +66,7 @@ const Page = () => {
             </p>
           </div>
           {/* OAuth Buttons */}
-          <div className="flex flex-col sm:flex-row items-stretch justify-center gap-3 mb-8 max-w-md mx-auto">
+          <div className="flex flex-col sm:flex-row items-stretch justify-center gap-3 mb-6 lg:mb-8 max-w-md mx-auto">
             {/* GitHub */}
             <button
               type="button"
@@ -97,7 +110,7 @@ const Page = () => {
           </div>
 
           {/* Divider */}
-          <div className="relative my-6 lg:my-8">
+          <div className="relative my-4 lg:my-8">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-border"></div>
             </div>

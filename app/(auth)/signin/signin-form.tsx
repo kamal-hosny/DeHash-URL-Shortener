@@ -6,7 +6,6 @@ import { loginSchema } from "@/validations/auth";
 import FormFields from "@/components/molecules/form-fields/form-fields";
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Controller } from "react-hook-form";
 
 type LoginFormData = {
   email: string;

@@ -5,10 +5,10 @@ import ThemeModeButton from "@/components/atoms/ModeToggle";
 
 export default function SignupPage() {
   return (
-    <div className="flex h-full text-white">
+    <div className="flex flex-col lg:flex-row h-full text-white">
 
       {/* Left Section */}
-      <div className="relative flex-1 flex items-end px-6 md:px-12 lg:px-20 pb-8 lg:pb-14">
+      <div className="hidden lg:flex relative flex-1 flex items-end px-6 md:px-12 lg:px-20 pb-8 lg:pb-14">
 
         {/* Buttons */}
         <div className="absolute top-6 end-6 flex items-center gap-3 z-20">
@@ -37,10 +37,26 @@ export default function SignupPage() {
       </div>
 
       {/* Right Section */}
-      <div className="flex-1 bg-card flex justify-center items-center py-8">
-        <div className="w-[400px] max-w-full px-6">
+      <div className="flex-1 bg-card flex justify-center items-center py-8 lg:py-8">
+        <div className="w-full max-w-[400px] px-6">
+          
+          {/* Mobile Header */}
+          <div className="lg:hidden mb-6">
+            <div className="flex items-center justify-between mb-6">
+              <BackButton />
+              <ThemeModeButton />
+            </div>
+            <div className="text-center space-y-2">
+              <h1 className="text-3xl font-semibold text-foreground">
+                Create your account
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Join thousands of users using DeHash
+              </p>
+            </div>
+          </div>
 
-          <div className="text-center mb-8 lg:mb-10">
+          <div className="hidden lg:block text-center mb-8 lg:mb-10">
             <h2 className="text-2xl lg:text-3xl font-semibold text-foreground mb-2">
              Create your account
             </h2>

@@ -186,13 +186,13 @@ const Navbar = () => {
             {!isAuth && (
               <div className="mt-4 pt-4 border-t border-border space-y-2">
                 <a
-                  href="/login"
+                  href="/signin"
                   className="block px-4 py-2 text-center border border-border text-foreground rounded-lg hover:bg-accent transition"
                 >
                   Login
                 </a>
                 <a
-                  href="/register"
+                  href="/signup"
                   className="block px-4 py-2 text-center bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition"
                 >
                   Sign Up
