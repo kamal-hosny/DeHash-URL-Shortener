@@ -1,4 +1,4 @@
-import { db } from "@/lib/db/client";
+import { getDb } from "@/lib/db/client";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -30,6 +30,8 @@ export async function login(
         message: "Missing email or password",
       };
     }
+
+    const db = getDb();
 
     const user = await db.query.users.findFirst({
       where: eq(users.email, credentials.email),
