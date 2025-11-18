@@ -18,7 +18,7 @@ const Footer = () => {
                 width={32}
                 height={32}
                 alt="Logo"
-                     className=" dark:invert"
+                className="dark:invert"
               />
               <span className="text-2xl font-semibold text-foreground">
                 DeHash

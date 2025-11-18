@@ -24,7 +24,7 @@ const TextField = ({
 }: Props & {
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onBlur: () => void;
-  value: any;
+  value: string;
   ref?: React.Ref<HTMLInputElement>;
 }) => {
     return (

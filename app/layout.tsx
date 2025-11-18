@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ThemeProvider } from "@/providers/theme-provider";
+import { SmoothScrollProvider } from "@/providers/smooth-scroll-provider";
 import { Roboto } from "next/font/google";
 import "./globals.css";
 const roboto = Roboto({
@@ -29,7 +30,9 @@ export default function PublicLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <SmoothScrollProvider>
+            {children}
+          </SmoothScrollProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -2,7 +2,7 @@
 
 
 import { useState } from "react";
-import ModeToggle from "../atoms/ModeToggle";
+// import ModeToggle from "../atoms/ModeToggle";
 import Image from "next/image";
 import { logo } from "@/assets";
 import Link from "../atoms/link";
@@ -25,23 +25,33 @@ const USER_MENU = [
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
-  const [isAuth, setIsAuth] = useState(false);
+  const [isAuth] = useState(false);
 
   return (
-    <nav className="bg-background border-b border-border sticky top-0 z-50 shadow-sm">
+    <>
+      {/* Overlay/Backdrop */}
+      {menuOpen && (
+        <div
+          onClick={() => setMenuOpen(false)}
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[45] md:hidden"
+        />
+      )}
+
+<nav className="bg-background backdrop-blur-lg border-b border-border fixed top-0 left-0 right-0 z-[60] shadow-sm">
+
       <div className="container">
         <div className="flex justify-between items-center h-16">
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-1 group">
             <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center group-hover:opacity-80 transition">
-                 <Image
-                                src={logo}
-                                width={20}
-                                height={20}
-                                alt="Logo"
-                                     className=" dark:invert"
-                              />
+              <Image
+                src={logo}
+                width={20}
+                height={20}
+                alt="Logo"
+                className="dark:invert"
+              />
             </div>
 
             <span className="text-xl font-bold text-foreground">
@@ -50,6 +60,11 @@ const Navbar = () => {
           </Link>
 
           {/* Desktop Links */}
+          
+
+          {/* Right Section */}
+       {/* */}
+          <div className="flex items-center gap-3">
           <div className="hidden md:flex items-center gap-1">
             {NAV_LINKS.map((link) => (
               <a
@@ -61,11 +76,8 @@ const Navbar = () => {
               </a>
             ))}
           </div>
-
-          {/* Right Section */}
-       {/* */}
-          <div className="flex items-center gap-3">
-            <ModeToggle />
+          <span className="max-md:hidden">|</span>
+            {/* <ModeToggle /> */}
             {isAuth ? (
               <div className="relative">
                 <button
@@ -192,7 +204,7 @@ const Navbar = () => {
       </div>
 
       {/* Demo */}
-      <div className="bg-muted border-t border-border p-3">
+      {/* <div className="bg-muted border-t border-border p-3">
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-3">
           <span className="text-sm text-muted-foreground">Demo Mode:</span>
           <button
@@ -202,8 +214,9 @@ const Navbar = () => {
             {isAuth ? "Logged In ✓" : "Not Logged In"}
           </button>
         </div>
-      </div>
+      </div> */}
     </nav>
+    </>
   );
 };
 
