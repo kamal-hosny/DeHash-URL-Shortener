@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Link, QrCode, Check, Sparkles, Zap } from "lucide-react";
+import { Link, QrCode, Check, Sparkles, Zap } from "@/assets/icons/index";
 
 export default function Hero() {
   const [activeTab, setActiveTab] = useState("qr");

@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Zap, Rocket, Crown } from "lucide-react";
+import { Check, Zap, Rocket, Crown } from "@/assets/icons/index";
 
 const Pricing = () => {
   const plans = [

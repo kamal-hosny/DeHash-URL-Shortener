@@ -1,6 +1,6 @@
 "use client";
 
-import { Zap, Shield, BarChart3, Layers, Smartphone, Lock } from "lucide-react";
+import { Zap, Shield, BarChart3, Layers, Smartphone, Lock } from "@/assets/icons/index";
 
 export default function Features() {
   const stats = [

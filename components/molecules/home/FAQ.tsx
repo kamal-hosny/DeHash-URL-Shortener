@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle } from "@/assets/icons/index";
 import { faqs } from "@/data";
 import Accordion from "@/components/atoms/Accordion";
 import Link from "@/components/atoms/link";
