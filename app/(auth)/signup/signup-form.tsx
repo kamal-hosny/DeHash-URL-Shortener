@@ -57,7 +57,6 @@ export default function SignupForm() {
         }
 
         router.push("/signin?success=account-created");
-        router.refresh();
       } catch (error: unknown) {
         const message =
           error instanceof Error ? error.message : "Something went wrong";
