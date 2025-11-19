@@ -2,6 +2,7 @@ import SignupForm from "./signup-form";
 import BackButton from "@/components/atoms/back-button";
 import Link from "@/components/atoms/link";
 import ThemeModeButton from "@/components/atoms/ModeToggle";
+import OAuthButtons from "../signin/oauth-buttons";
 
 export default function SignupPage() {
   return (
@@ -64,6 +65,21 @@ export default function SignupPage() {
               Sign up to get started with{" "}
               <span className="text-primary font-medium">DeHash</span>
             </p>
+          </div>
+
+          {/* OAuth Buttons */}
+          <OAuthButtons />
+
+          {/* Divider */}
+          <div className="relative my-4 lg:my-8">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-card text-muted-foreground">
+                or continue with email
+              </span>
+            </div>
           </div>
 
           <SignupForm />

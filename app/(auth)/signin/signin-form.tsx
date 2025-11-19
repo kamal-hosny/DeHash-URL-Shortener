@@ -6,6 +6,7 @@ import { loginSchema } from "@/validations/auth";
 import FormFields from "@/components/molecules/form-fields/form-fields";
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 
 type LoginFormData = {
   email: string;
@@ -30,24 +31,44 @@ export default function LoginForm() {
 
   const onSubmit = useCallback(async (data: LoginFormData) => {
     try {
-      // TODO: Replace with your API call
-      console.log("Login data:", data);
-      
-      // Simulating a successful login
-      console.log("✅ Login success!");
-      router.push("/dashboard");
-      
-      // Example of how to handle errors when API is connected:
-      // if (!response.ok) {
-      //   const error = await response.json();
-      //   Object.entries(error.errors || {}).forEach(([field, messages]) => {
-      //     setError(field as keyof LoginFormData, {
-      //       type: "server",
-      //       message: Array.isArray(messages) ? messages[0] : messages,
-      //     });
-      //   });
-      //   return;
-      // }
+      const result = await signIn("credentials", {
+        email: data.email,
+        password: data.password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        try {
+          const errorData = JSON.parse(result.error);
+          if (errorData.validationError) {
+            // Handle validation errors
+            Object.entries(errorData.validationError).forEach(([field, messages]) => {
+              setError(field as keyof LoginFormData, {
+                type: "server",
+                message: Array.isArray(messages) ? messages[0] : String(messages),
+              });
+            });
+          } else if (errorData.responseError) {
+            setError("root", {
+              type: "server",
+              message: errorData.responseError,
+            });
+          }
+        } catch {
+          // If error is not JSON, show it directly
+          setError("root", {
+            type: "server",
+            message: result.error,
+          });
+        }
+        return;
+      }
+
+      // Login successful - redirect to dashboard
+      if (result?.ok) {
+        router.push("/dashboard");
+        router.refresh(); // Refresh to update session
+      }
       
     } catch (error: any) {
       setError("root", {
