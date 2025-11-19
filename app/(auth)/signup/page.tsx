@@ -2,14 +2,14 @@ import SignupForm from "./signup-form";
 import BackButton from "@/components/atoms/back-button";
 import Link from "@/components/atoms/link";
 import ThemeModeButton from "@/components/atoms/ModeToggle";
-import OAuthButtons from "../signin/oauth-buttons";
+import OAuthButtons from "../oauth-buttons";
 
 export default function SignupPage() {
   return (
     <div className="flex flex-col lg:flex-row h-full text-white">
 
       {/* Left Section */}
-      <div className="hidden lg:flex relative flex-1 flex items-end px-6 md:px-12 lg:px-20 pb-8 lg:pb-14">
+      <div className="hidden lg:flex relative flex-1 items-end px-6 md:px-12 lg:px-20 pb-8 lg:pb-14">
 
         {/* Buttons */}
         <div className="absolute top-6 end-6 flex items-center gap-3 z-20">

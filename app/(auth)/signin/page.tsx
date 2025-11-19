@@ -1,7 +1,7 @@
 import LoginForm from "./signin-form";
 import BackButton from "@/components/atoms/back-button";
 import Link from "@/components/atoms/link";
-import OAuthButtons from "./oauth-buttons";
+import OAuthButtons from "../oauth-buttons";
 
 const Page = () => {
   return (

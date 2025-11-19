@@ -1,8 +1,12 @@
-import React from 'react'
+"use client"
+import { useAuthUser } from "@/store/authStore";
 
 const page = () => {
+  const user = useAuthUser();
+  console.log("Dashboard page", user);
+  
   return (
-    <div>page</div>
+    <div>page , {user?.name ?? "guest"}</div>
   )
 }
 

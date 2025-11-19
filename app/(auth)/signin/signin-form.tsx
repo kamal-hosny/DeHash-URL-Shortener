@@ -7,6 +7,8 @@ import FormFields from "@/components/molecules/form-fields/form-fields";
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
+import { useAuthDispatch, useAuthError, useAuthStatus } from "@/store/authStore";
+import type { User as SessionUser } from "@/types";
 
 type LoginFormData = {
   email: string;
@@ -15,6 +17,10 @@ type LoginFormData = {
 
 export default function LoginForm() {
   const router = useRouter();
+  const dispatch = useAuthDispatch();
+  const status = useAuthStatus();
+  const authError = useAuthError();
+  const isAuthLoading = status === "loading";
   
   const {
     handleSubmit,
@@ -30,6 +36,7 @@ export default function LoginForm() {
   });
 
   const onSubmit = useCallback(async (data: LoginFormData) => {
+    dispatch({ type: "START_AUTH" });
     try {
       const result = await signIn("credentials", {
         email: data.email,
@@ -38,45 +45,59 @@ export default function LoginForm() {
       });
 
       if (result?.error) {
+        let message = result.error;
         try {
           const errorData = JSON.parse(result.error);
           if (errorData.validationError) {
-            // Handle validation errors
             Object.entries(errorData.validationError).forEach(([field, messages]) => {
               setError(field as keyof LoginFormData, {
                 type: "server",
                 message: Array.isArray(messages) ? messages[0] : String(messages),
               });
             });
-          } else if (errorData.responseError) {
+          }
+          if (errorData.responseError) {
+            message = errorData.responseError;
             setError("root", {
               type: "server",
-              message: errorData.responseError,
+              message,
             });
           }
         } catch {
-          // If error is not JSON, show it directly
           setError("root", {
             type: "server",
-            message: result.error,
+            message,
           });
         }
+        dispatch({ type: "FAIL_AUTH", payload: message });
         return;
       }
 
-      // Login successful - redirect to dashboard
       if (result?.ok) {
+        const sessionResponse = await fetch("/api/auth/session");
+        const sessionData = sessionResponse.ok ? await sessionResponse.json() : null;
+        const sessionUser = (sessionData?.user || null) as SessionUser | null;
+
+        if (sessionUser) {
+          dispatch({ type: "RESOLVE_AUTH", payload: sessionUser });
+        } else {
+          dispatch({ type: "HYDRATE", payload: null });
+        }
+
         router.push("/dashboard");
-        router.refresh(); // Refresh to update session
+        router.refresh();
       }
       
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Something went wrong";
+      dispatch({ type: "FAIL_AUTH", payload: message });
       setError("root", {
         type: "server",
-        message: error.message || "Something went wrong",
+        message,
       });
     }
-  }, [router, setError]);
+  }, [dispatch, router, setError]);
 
   const formFields = [
     {
@@ -111,9 +132,9 @@ export default function LoginForm() {
         />
       ))}
 
-      {errors.root && (
+      {(errors.root || authError) && (
         <div className="text-red-500 text-sm text-center">
-          {errors.root.message}
+          {errors.root?.message || authError}
         </div>
       )}
 
@@ -128,10 +149,10 @@ export default function LoginForm() {
 
       <button
         type="submit"
-        disabled={isSubmitting}
+        disabled={isSubmitting || isAuthLoading}
         className="w-full bg-blue-600 hover:bg-blue-700 hover:scale-[1.02] py-3 rounded-lg font-medium transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
       >
-        {isSubmitting ? "Signing in..." : "Sign in"}
+        {isSubmitting || isAuthLoading ? "Signing in..." : "Sign in"}
       </button>
     </form>
   );

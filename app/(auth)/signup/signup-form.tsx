@@ -6,13 +6,9 @@ import { signupSchema } from "@/validations/auth";
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import FormFields from "@/components/molecules/form-fields/form-fields";
+import { signupAction, type SignupActionInput } from "./actions";
 
-type SignupFormData = {
-  name: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-};
+type SignupFormData = SignupActionInput;
 
 export default function SignupForm() {
   const router = useRouter();
@@ -21,6 +17,7 @@ export default function SignupForm() {
     handleSubmit,
     formState: { errors, isSubmitting },
     setError,
+    clearErrors,
     control,
   } = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema()),
@@ -34,20 +31,44 @@ export default function SignupForm() {
 
   const onSubmit = useCallback(
     async (data: SignupFormData) => {
+      clearErrors();
       try {
-        console.log("Signup data:", data);
+        const result = await signupAction(data);
 
-        // TODO: send to API
-        // router.push("/dashboard");
+        if (!result.success) {
+          if (result.validationError) {
+            Object.entries(result.validationError).forEach(([field, messages]) => {
+              if (messages && messages.length > 0) {
+                setError(field as keyof SignupFormData, {
+                  type: "server",
+                  message: messages[0],
+                });
+              }
+            });
+          }
 
-      } catch (error: any) {
+          setError("root", {
+            type: "server",
+            message:
+              result.message ||
+              "We couldn't create your account. Please try again.",
+          });
+          return;
+        }
+
+        router.push("/signin?success=account-created");
+        router.refresh();
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : "Something went wrong";
+
         setError("root", {
           type: "server",
-          message: error.message || "Something went wrong",
+          message,
         });
       }
     },
-    [router, setError]
+    [clearErrors, router, setError]
   );
 
   const getFieldError = (field: keyof SignupFormData) => {
