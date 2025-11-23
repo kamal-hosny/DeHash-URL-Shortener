@@ -18,6 +18,15 @@ import {
   Quote,
   ChevronLeft,
   ChevronRight,
+  Dribbble,
+  Github,
+  Linkedin,
+  Twitter,
+  DollarSign,
+  LayoutDashboard,
+  LogOut,
+  Settings,
+  type LucideIcon
 } from "lucide-react";
 
 export {
@@ -40,4 +49,13 @@ export {
   Quote,
   ChevronLeft,
   ChevronRight,
+  Dribbble,
+  Github,
+  Linkedin,
+  Twitter,
+  DollarSign,
+  LayoutDashboard,
+  LogOut,
+  Settings,
+  type LucideIcon,
 };

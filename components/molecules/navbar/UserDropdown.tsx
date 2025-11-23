@@ -6,7 +6,7 @@ import { useAuthDispatch } from "@/store/authStore";
 import { signOut } from "next-auth/react";
 
 interface UserDropdownProps {
-    user: any; // Replace with proper type if available, e.g., SessionUser
+    user: any; 
 }
 
 export const UserDropdown = ({ user }: UserDropdownProps) => {

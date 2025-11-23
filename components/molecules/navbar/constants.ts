@@ -4,7 +4,7 @@ import {
     LogOut,
     Settings,
     type LucideIcon,
-} from "lucide-react";
+} from "@/assets/icons";
 
 export const NAV_LINKS = [
     { name: "Home", href: "/" },
@@ -13,7 +13,7 @@ export const NAV_LINKS = [
 ];
 
 export type UserMenuItem =
-    | { name: string; href: string; icon: LucideIcon }
+    { name: string; href: string; icon: LucideIcon }
     | { name: string; action: "signout"; icon: LucideIcon };
 
 export const USER_MENU: UserMenuItem[] = [
