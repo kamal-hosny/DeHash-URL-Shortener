@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { SmoothScrollProvider } from "@/providers/smooth-scroll-provider";
 import { QueryProvider } from "@/providers/query-provider";
+import { AuthSessionProvider } from "@/providers/session-provider";
 import { Roboto } from "next/font/google";
 import "./globals.css";
 const roboto = Roboto({
@@ -25,18 +26,20 @@ export default function PublicLayout({
       <body
         className={`${roboto.className} antialiased`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <QueryProvider>
-            <SmoothScrollProvider>
-              {children}
-            </SmoothScrollProvider>
-          </QueryProvider>
-        </ThemeProvider>
+        <AuthSessionProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <QueryProvider>
+              <SmoothScrollProvider>
+                {children}
+              </SmoothScrollProvider>
+            </QueryProvider>
+          </ThemeProvider>
+        </AuthSessionProvider>
       </body>
     </html>
   );

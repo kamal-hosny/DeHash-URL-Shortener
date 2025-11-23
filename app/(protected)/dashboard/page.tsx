@@ -9,5 +9,4 @@ const page = () => {
     <div>page , {user?.name ?? "guest"}</div>
   )
 }
-
 export default page
