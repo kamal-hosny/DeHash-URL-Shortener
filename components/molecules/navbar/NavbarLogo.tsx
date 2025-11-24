@@ -13,6 +13,7 @@ export const NavbarLogo = () => {
           alt="Logo"
           className="dark:invert"
           priority
+          suppressHydrationWarning
         />
       </div>
       <span className="text-xl font-bold text-foreground">DeHash</span>
