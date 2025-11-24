@@ -84,7 +84,7 @@ const ContactPage = () => {
                       <p className="text-sm text-primary-foreground/70 mb-1">
                         Email
                       </p>
-                      <p className="font-medium">demo@gmail.com</p>
+                      <p className="font-medium">dehash@gmail.com</p>
                     </div>
                   </div>
 
