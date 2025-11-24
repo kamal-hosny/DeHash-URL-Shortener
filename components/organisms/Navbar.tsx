@@ -5,7 +5,10 @@ import { NavbarLogo } from "../molecules/navbar/NavbarLogo";
 import { NavLinks } from "../molecules/navbar/NavLinks";
 import { AuthButtons } from "../molecules/navbar/AuthButtons";
 import { UserDropdown } from "../molecules/navbar/UserDropdown";
-import { MobileMenuToggle, MobileMenuDropdown } from "../molecules/navbar/MobileMenu";
+import {
+  MobileMenuToggle,
+  MobileMenuDropdown,
+} from "../molecules/navbar/MobileMenu";
 import { useAuthSync } from "@/hooks/useAuthSync";
 import { useNavbarLogic } from "@/hooks/useNavbarLogic";
 
@@ -36,7 +39,7 @@ const Navbar = () => {
               <span className="max-md:hidden">|</span>
 
               {isAuth ? (
-                <UserDropdown user={user} />
+                <UserDropdown user={user!} />
               ) : isAuthLoading ? (
                 <div className="hidden md:flex items-center gap-3">
                   <div className="h-10 w-20 rounded-lg bg-muted animate-pulse" />
@@ -50,7 +53,11 @@ const Navbar = () => {
             </div>
           </div>
 
-          <MobileMenuDropdown isOpen={menuOpen} onClose={closeMenu} isAuth={isAuth} />
+          <MobileMenuDropdown
+            isOpen={menuOpen}
+            onClose={closeMenu}
+            isAuth={isAuth}
+          />
         </div>
       </nav>
     </>

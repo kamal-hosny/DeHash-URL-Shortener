@@ -4,7 +4,7 @@ import { useState } from "react";
 import { HelpCircle } from "@/assets/icons/index";
 import { faqs } from "@/data";
 import Accordion from "@/components/atoms/Accordion";
-import Link from "@/components/atoms/link";
+import Link from "@/components/atoms/Link";
 import { Button } from "@/components/ui/button";
 
 const FAQ = () => {
@@ -83,7 +83,7 @@ const FAQ = () => {
             <p className="text-xs sm:text-sm text-muted-foreground">
               Still have questions?{" "}
               <Link
-                href={"signin"}
+                href={"/signin"}
                 className="text-primary hover:text-primary/80 font-semibold underline-offset-4 hover:underline"
               >
                 Contact our support team

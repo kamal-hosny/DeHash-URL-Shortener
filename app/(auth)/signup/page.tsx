@@ -1,16 +1,14 @@
 import SignupForm from "./signup-form";
-import BackButton from "@/components/atoms/back-button";
-import Link from "@/components/atoms/link";
+import BackButton from "@/components/atoms/BackButton";
+import Link from "@/components/atoms/Link";
 import ThemeModeButton from "@/components/atoms/ModeToggle";
 import OAuthButtons from "../oauth-buttons";
 
 export default function SignupPage() {
   return (
     <div className="flex flex-col lg:flex-row h-full text-white">
-
       {/* Left Section */}
       <div className="hidden lg:flex relative flex-1 items-end px-6 md:px-12 lg:px-20 pb-8 lg:pb-14">
-
         {/* Buttons */}
         <div className="absolute top-6 end-6 flex items-center gap-3 z-20">
           <ThemeModeButton />
@@ -22,7 +20,7 @@ export default function SignupPage() {
         {/* Text */}
         <div className="relative space-y-4 lg:space-y-6 z-10">
           <h1 className="text-4xl lg:text-6xl font-semibold leading-tight">
-           Create your account
+            Create your account
             <br />
             and start shortening
             <br />
@@ -32,7 +30,8 @@ export default function SignupPage() {
             </span>
           </h1>
           <p className="text-base lg:text-lg text-muted-foreground max-w-lg">
-            Join thousands of users using DeHash to shorten, manage, and secure their links.
+            Join thousands of users using DeHash to shorten, manage, and secure
+            their links.
           </p>
         </div>
       </div>
@@ -40,7 +39,6 @@ export default function SignupPage() {
       {/* Right Section */}
       <div className="flex-1 bg-card flex justify-center items-center py-8 lg:py-8">
         <div className="w-full max-w-[400px] px-6">
-          
           {/* Mobile Header */}
           <div className="lg:hidden mb-6">
             <div className="flex items-center justify-between mb-6">
@@ -59,7 +57,7 @@ export default function SignupPage() {
 
           <div className="hidden lg:block text-center mb-8 lg:mb-10">
             <h2 className="text-2xl lg:text-3xl font-semibold text-foreground mb-2">
-             Create your account
+              Create your account
             </h2>
             <p className="text-sm text-muted-foreground">
               Sign up to get started with{" "}

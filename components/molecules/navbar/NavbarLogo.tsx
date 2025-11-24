@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Link from "../../atoms/link";
+import Link from "../../atoms/Link";
 import { logo } from "@/assets";
 
 export const NavbarLogo = () => {

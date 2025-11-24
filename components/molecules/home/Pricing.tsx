@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/atoms/Link";
 import { Check } from "@/assets/icons";
 import { plans as pricingPlans } from "@/data";
 import { useMemo, useState } from "react";
@@ -63,15 +63,15 @@ const Pricing = () => {
               const displayPrice = isCustom
                 ? "Custom"
                 : priceValue === 0
-                ? "$0"
-                : `$${
-                    billingCycle === "yearly" ? priceValue / 12 : priceValue
-                  }`;
+                  ? "$0"
+                  : `$${
+                      billingCycle === "yearly" ? priceValue / 12 : priceValue
+                    }`;
               const priceSuffix = isCustom
                 ? ""
                 : billingCycle === "yearly"
-                ? "/month billed yearly"
-                : "/month";
+                  ? "/month billed yearly"
+                  : "/month";
               const isPopular = Boolean(plan.popular);
               const actionHref =
                 plan.name.toLowerCase() === "enterprise"

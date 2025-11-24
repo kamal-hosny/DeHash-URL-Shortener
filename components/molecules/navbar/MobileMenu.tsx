@@ -1,4 +1,4 @@
-import Link from "../../atoms/link";
+import Link from "../../atoms/Link";
 import { NAV_LINKS } from "./constants";
 import { Menu, X } from "@/assets/icons";
 import { Button } from "@/components/ui/button";
