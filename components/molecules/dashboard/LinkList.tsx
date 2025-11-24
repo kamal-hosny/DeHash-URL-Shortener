@@ -84,7 +84,7 @@ const LinkList = () => {
                               `${window.location.origin}/r/${link.shortCode}`
                             )
                           }
-                          className="opacity-0 group-hover:opacity-100 transition-opacity h-auto w-auto p-0"
+                          className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity h-auto w-auto p-0"
                           title="Copy"
                         >
                           <Copy size={12} />
@@ -135,7 +135,7 @@ const LinkList = () => {
                   })}
                 </td>
                 <td className="px-6 py-4 text-right">
-                  <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center justify-end gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                     <Button variant="ghost" size="icon-sm" className="p-2">
                       <BarChart2 size={16} />
                     </Button>
