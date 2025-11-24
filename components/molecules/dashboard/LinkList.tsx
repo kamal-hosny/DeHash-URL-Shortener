@@ -1,4 +1,4 @@
-import { useLinkStore } from "@/store/linkStore";
+import { useLinkStore, Link as LinkType } from "@/store/linkStore";
 import { useToast } from "@/hooks/useToast";
 import {
   Copy,
@@ -16,7 +16,7 @@ import CreateQrModal from "./modals/CreateQrModal";
 const LinkList = () => {
   const { links, removeLink } = useLinkStore();
   const { toast } = useToast();
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedLink, setSelectedLink] = useState<LinkType | null>(null);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -147,7 +147,7 @@ const LinkList = () => {
                     </Button>
                     <Button
                       variant="ghost"
-                      onClick={() => setIsCreateModalOpen(true)}
+                      onClick={() => setSelectedLink(link)}
                       size="icon-sm"
                       className="p-2"
                     >
@@ -184,8 +184,13 @@ const LinkList = () => {
         </div>
       )}
       <CreateQrModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        isOpen={!!selectedLink}
+        onClose={() => setSelectedLink(null)}
+        url={
+          selectedLink
+            ? `${window.location.origin}/r/${selectedLink.shortCode}`
+            : undefined
+        }
       />
     </div>
   );
