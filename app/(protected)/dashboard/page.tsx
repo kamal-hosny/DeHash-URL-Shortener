@@ -1,10 +1,16 @@
-"use client"
-import { useState } from 'react';
-import { Link2, MousePointer2, BarChart3, Activity, Plus } from '@/assets/icons';
-import StatCard from '@/components/molecules/dashboard/StatCard';
-import LinkList from '@/components/molecules/dashboard/LinkList';
-import CreateLinkModal from '@/components/molecules/dashboard/CreateLinkModal';
-import { useLinkStore } from '@/store/linkStore';
+"use client";
+import { useState } from "react";
+import {
+  Link2,
+  MousePointer2,
+  BarChart3,
+  Activity,
+  Plus,
+} from "@/assets/icons";
+import StatCard from "@/components/molecules/dashboard/StatCard";
+import LinkList from "@/components/molecules/dashboard/LinkList";
+import CreateLinkModal from "@/components/molecules/dashboard/modals/CreateLinkModal";
+import { useLinkStore } from "@/store/linkStore";
 
 const DashboardPage = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -13,16 +19,18 @@ const DashboardPage = () => {
   // Calculate stats
   const totalLinks = links.length;
   const totalClicks = links.reduce((acc, link) => acc + link.clicks, 0);
-  const activeLinks = links.filter(link => link.isActive).length;
+  const activeLinks = links.filter((link) => link.isActive).length;
 
   return (
     <div className="space-y-8">
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">Dashboard</h1>
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">
+            Dashboard
+          </h1>
           <p className="text-muted-foreground mt-1">
-           Monitor your link growth and engagement in one place.
+            Monitor your link growth and engagement in one place.
           </p>
         </div>
 
@@ -53,11 +61,7 @@ const DashboardPage = () => {
           icon={MousePointer2}
           trend={{ value: 8, isPositive: true }}
         />
-        <StatCard
-          title="Active Links"
-          value={activeLinks}
-          icon={Activity}
-        />
+        <StatCard title="Active Links" value={activeLinks} icon={Activity} />
         <StatCard
           title="Avg. CTR"
           value="4.2%"
@@ -77,6 +81,6 @@ const DashboardPage = () => {
       />
     </div>
   );
-}
+};
 
 export default DashboardPage;

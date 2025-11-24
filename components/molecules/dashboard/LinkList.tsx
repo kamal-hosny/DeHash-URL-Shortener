@@ -1,4 +1,3 @@
-
 import { useLinkStore } from "@/store/linkStore";
 import {
   Copy,
@@ -10,9 +9,12 @@ import {
 } from "@/assets/icons";
 import { Button } from "@/components/ui/button";
 import Link from "@/components/atoms/link";
+import { useState } from "react";
+import CreateQrModal from "./modals/CreateQrModal";
 
 const LinkList = () => {
   const { links, removeLink } = useLinkStore();
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -137,7 +139,12 @@ const LinkList = () => {
                     <Button variant="ghost" size="icon-sm" className="p-2">
                       <BarChart2 size={16} />
                     </Button>
-                    <Button variant="ghost" size="icon-sm" className="p-2">
+                    <Button
+                      variant="ghost"
+                      onClick={() => setIsCreateModalOpen(true)}
+                      size="icon-sm"
+                      className="p-2"
+                    >
                       <QrCode size={16} />
                     </Button>
                     <div className="w-px h-4 bg-border mx-1" />
@@ -170,6 +177,10 @@ const LinkList = () => {
           </p>
         </div>
       )}
+      <CreateQrModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+      />
     </div>
   );
 };

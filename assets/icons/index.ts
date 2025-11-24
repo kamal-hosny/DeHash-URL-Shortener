@@ -37,6 +37,8 @@ import {
   Link2,
   Activity,
   MousePointer2,
+  Download,
+  Share2,
   type LucideIcon
 } from "lucide-react";
 
@@ -72,13 +74,15 @@ export {
   ChevronDown,
   Menu,
   Plus,
-    Copy,
+  Copy,
   ExternalLink,
   Trash2,
   BarChart2,
   Link2,
   Activity,
   MousePointer2,
-  
+  Download,
+  Share2,
+
   type LucideIcon,
 };
