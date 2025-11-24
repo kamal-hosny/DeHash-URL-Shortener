@@ -17,6 +17,14 @@ const ContactForm = () => {
     formState: { errors },
   } = useForm<ContactSchema>({
     resolver: zodResolver(contactSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      subject: "General Inquiry",
+      message: "",
+    },
   });
 
   const onSubmit = async (values: ContactSchema) => {
