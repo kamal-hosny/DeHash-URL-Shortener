@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import { useToast } from "@/hooks/useToast";
 import { Download, Copy, Check, Share2 } from "@/assets/icons";
 import QRCode from "react-qr-code";
 import {
@@ -17,23 +18,23 @@ interface CreateQrModalProps {
   url?: string;
 }
 
+// 🎨 Predefined Styles
 const QR_STYLES = [
   { name: "Default", fg: "#000000", bg: "#ffffff" },
   { name: "Dark", fg: "#ffffff", bg: "#000000" },
   { name: "Navy", fg: "#ffffff", bg: "#0f172a" },
   { name: "Red", fg: "#ffffff", bg: "#ef4444" },
   { name: "Blue", fg: "#ffffff", bg: "#3b82f6" },
-  { name: "Emerald", fg: "#ffffff", bg: "#10b981" },      
-  { name: "Purple", fg: "#ffffff", bg: "#8b5cf6" },      
-
+  { name: "Emerald", fg: "#ffffff", bg: "#10b981" },
+  { name: "Purple", fg: "#ffffff", bg: "#8b5cf6" },
 ];
-
 
 const CreateQrModal: React.FC<CreateQrModalProps> = ({
   isOpen,
   onClose,
   url = "https://github.com/",
 }) => {
+  const { toast } = useToast();
   const [selectedStyle, setSelectedStyle] = useState(QR_STYLES[0]);
   const [isCopied, setIsCopied] = useState(false);
   const qrRef = useRef<HTMLDivElement>(null);
@@ -73,6 +74,10 @@ const CreateQrModal: React.FC<CreateQrModalProps> = ({
         link.download = `qr-code-${Date.now()}.png`;
         link.href = URL.createObjectURL(blob);
         link.click();
+        toast({
+          title: "Downloaded!",
+          description: "QR Code has been saved to your device.",
+        });
       }
     });
   };
@@ -85,9 +90,18 @@ const CreateQrModal: React.FC<CreateQrModalProps> = ({
             new ClipboardItem({ "image/png": blob }),
           ]);
           setIsCopied(true);
+          toast({
+            title: "Copied!",
+            description: "QR Code image copied to clipboard.",
+          });
           setTimeout(() => setIsCopied(false), 2000);
         } catch (err) {
           console.error("Failed to copy image:", err);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to copy image to clipboard.",
+          });
         }
       }
     });

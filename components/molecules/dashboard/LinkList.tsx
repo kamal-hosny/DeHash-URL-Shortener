@@ -1,4 +1,5 @@
 import { useLinkStore } from "@/store/linkStore";
+import { useToast } from "@/hooks/useToast";
 import {
   Copy,
   ExternalLink,
@@ -14,10 +15,15 @@ import CreateQrModal from "./modals/CreateQrModal";
 
 const LinkList = () => {
   const { links, removeLink } = useLinkStore();
+  const { toast } = useToast();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
+    toast({
+      title: "Copied!",
+      description: "Link copied to clipboard.",
+    });
   };
 
   return (

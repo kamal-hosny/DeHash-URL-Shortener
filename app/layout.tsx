@@ -4,6 +4,7 @@ import { SmoothScrollProvider } from "@/providers/smooth-scroll-provider";
 import { QueryProvider } from "@/providers/query-provider";
 import { AuthSessionProvider } from "@/providers/session-provider";
 import { Roboto } from "next/font/google";
+import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 const roboto = Roboto({
   subsets: ["latin"],
@@ -23,9 +24,7 @@ export default function PublicLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${roboto.className} antialiased`}
-      >
+      <body className={`${roboto.className} antialiased`}>
         <AuthSessionProvider>
           <ThemeProvider
             attribute="class"
@@ -36,6 +35,7 @@ export default function PublicLayout({
             <QueryProvider>
               <SmoothScrollProvider>
                 {children}
+                <Toaster />
               </SmoothScrollProvider>
             </QueryProvider>
           </ThemeProvider>
