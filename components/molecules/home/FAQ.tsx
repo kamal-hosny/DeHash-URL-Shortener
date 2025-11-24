@@ -5,6 +5,7 @@ import { HelpCircle } from "@/assets/icons/index";
 import { faqs } from "@/data";
 import Accordion from "@/components/atoms/Accordion";
 import Link from "@/components/atoms/link";
+import { Button } from "@/components/ui/button";
 
 const FAQ = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
@@ -61,19 +62,18 @@ const FAQ = () => {
         {/* More / Less Button */}
         <div className="text-center mt-6 sm:mt-8">
           {visibleCount < faqs.length ? (
-            <button
-              onClick={handleShowMore}
-              className="px-5 sm:px-6 cursor-pointer py-2.5 sm:py-3 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition text-sm sm:text-base"
-            >
+            <Button onClick={handleShowMore} size="lg" className="rounded-full">
               Show More
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
               onClick={handleShowLess}
-              className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-muted text-foreground border hover:bg-muted/70 transition text-sm sm:text-base"
+              variant="outline"
+              size="lg"
+              className="rounded-full"
             >
               Show Less
-            </button>
+            </Button>
           )}
         </div>
 

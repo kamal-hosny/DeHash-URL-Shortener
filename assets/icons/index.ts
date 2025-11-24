@@ -26,6 +26,17 @@ import {
   LayoutDashboard,
   LogOut,
   Settings,
+  X,
+  ChevronDown,
+  Menu,
+  Plus,
+  Copy,
+  ExternalLink,
+  Trash2,
+  BarChart2,
+  Link2,
+  Activity,
+  MousePointer2,
   type LucideIcon
 } from "lucide-react";
 
@@ -57,5 +68,17 @@ export {
   LayoutDashboard,
   LogOut,
   Settings,
+  X,
+  ChevronDown,
+  Menu,
+  Plus,
+    Copy,
+  ExternalLink,
+  Trash2,
+  BarChart2,
+  Link2,
+  Activity,
+  MousePointer2,
+  
   type LucideIcon,
 };

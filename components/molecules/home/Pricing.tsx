@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Check } from "@/assets/icons";
 import { plans as pricingPlans } from "@/data";
 import { useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
 
 const Pricing = () => {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">(
@@ -14,7 +15,6 @@ const Pricing = () => {
     () => (billingCycle === "yearly" ? "Save 25%" : "Pay monthly"),
     [billingCycle]
   );
-
 
   return (
     <section className="py-12 sm:py-16 md:py-20 px-4 relative overflow-hidden">
@@ -29,7 +29,8 @@ const Pricing = () => {
             Simple, Transparent Pricing
           </h2>
           <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto px-4">
-            Choose the perfect plan for your needs. Start free and upgrade anytime.
+            Choose the perfect plan for your needs. Start free and upgrade
+            anytime.
           </p>
         </div>
 
@@ -38,17 +39,15 @@ const Pricing = () => {
           <div className="flex flex-wrap items-center justify-center gap-4 mb-10">
             <div className="flex items-center gap-2 px-1 py-1 rounded-full bg-muted">
               {["monthly", "yearly"].map((cycle) => (
-                <button
+                <Button
                   key={cycle}
                   onClick={() => setBillingCycle(cycle as "monthly" | "yearly")}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-                    billingCycle === cycle
-                      ? "bg-background shadow text-foreground"
-                      : "text-muted-foreground"
-                  }`}
+                  variant={billingCycle === cycle ? "default" : "ghost"}
+                  size="sm"
+                  className="rounded-full"
                 >
                   {cycle === "monthly" ? "Monthly" : "Yearly"}
-                </button>
+                </Button>
               ))}
             </div>
             <span className="text-xs font-semibold uppercase tracking-wide text-primary border border-primary/30 rounded-full px-3 py-1">
@@ -59,15 +58,15 @@ const Pricing = () => {
           <div className="grid gap-6 lg:grid-cols-3">
             {pricingPlans.map((plan) => {
               const Icon = plan.icon;
-              const priceValue = plan.price
-                ? plan.price[billingCycle]
-                : null;
+              const priceValue = plan.price ? plan.price[billingCycle] : null;
               const isCustom = priceValue === null || priceValue === undefined;
               const displayPrice = isCustom
                 ? "Custom"
                 : priceValue === 0
                 ? "$0"
-                : `$${billingCycle === "yearly" ? priceValue / 12 : priceValue}`;
+                : `$${
+                    billingCycle === "yearly" ? priceValue / 12 : priceValue
+                  }`;
               const priceSuffix = isCustom
                 ? ""
                 : billingCycle === "yearly"
@@ -82,7 +81,9 @@ const Pricing = () => {
               return (
                 <div
                   key={plan.name}
-                  className={`relative border bg-linear-to-br ${plan.gradient} rounded-3xl p-8 backdrop-blur-xl transition duration-300 hover:-translate-y-2 ${
+                  className={`relative border bg-linear-to-br ${
+                    plan.gradient
+                  } rounded-3xl p-8 backdrop-blur-xl transition duration-300 hover:-translate-y-2 ${
                     isPopular
                       ? "border-primary shadow-2xl"
                       : "border-border/60 shadow-lg"
@@ -96,7 +97,9 @@ const Pricing = () => {
 
                   <div className="flex items-center gap-4 mb-6">
                     <div
-                      className={`${plan.accent ?? ""} bg-background/70 border border-white/10 rounded-2xl h-14 w-14 flex items-center justify-center`}
+                      className={`${
+                        plan.accent ?? ""
+                      } bg-background/70 border border-white/10 rounded-2xl h-14 w-14 flex items-center justify-center`}
                     >
                       <Icon className="h-6 w-6" strokeWidth={1.8} />
                     </div>

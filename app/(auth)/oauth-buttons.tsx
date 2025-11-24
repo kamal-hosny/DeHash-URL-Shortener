@@ -2,14 +2,17 @@
 
 import { signIn } from "next-auth/react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 export default function OAuthButtons() {
   const [loading, setLoading] = useState<string | null>(null);
 
-  const handleOAuthSignIn = async (provider: "github" | "google" | "discord") => {
+  const handleOAuthSignIn = async (
+    provider: "github" | "google" | "discord"
+  ) => {
     try {
       setLoading(provider);
-      await signIn(provider, { 
+      await signIn(provider, {
         callbackUrl: "/dashboard",
         redirect: true,
       });
@@ -22,11 +25,12 @@ export default function OAuthButtons() {
   return (
     <div className="flex flex-col sm:flex-row items-stretch justify-center gap-3 mb-6 lg:mb-8 max-w-md mx-auto">
       {/* GitHub */}
-      <button
+      <Button
         type="button"
         onClick={() => handleOAuthSignIn("github")}
         disabled={loading !== null}
-        className="group relative flex-1 flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl bg-muted/30 backdrop-blur-md border border-border text-foreground transition-all duration-300 hover:bg-muted hover:scale-[1.02] active:scale-[0.98] shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+        variant="outline"
+        className="flex-1 gap-2.5"
       >
         <svg
           className="w-5 h-5 opacity-90 group-hover:opacity-100 transition-all"
@@ -38,14 +42,15 @@ export default function OAuthButtons() {
         <span className="font-medium text-sm">
           {loading === "github" ? "Loading..." : "GitHub"}
         </span>
-      </button>
+      </Button>
 
       {/* Google */}
-      <button
+      <Button
         type="button"
         onClick={() => handleOAuthSignIn("google")}
         disabled={loading !== null}
-        className="group relative flex-1 flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl bg-muted/30 backdrop-blur-md border border-border text-foreground transition-all duration-300 hover:bg-muted hover:scale-[1.02] active:scale-[0.98] shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+        variant="outline"
+        className="flex-1 gap-2.5"
       >
         <svg className="w-5 h-5" viewBox="0 0 24 24">
           <path
@@ -68,14 +73,15 @@ export default function OAuthButtons() {
         <span className="font-medium text-sm">
           {loading === "google" ? "Loading..." : "Google"}
         </span>
-      </button>
+      </Button>
 
       {/* Discord */}
-      <button
+      <Button
         type="button"
         onClick={() => handleOAuthSignIn("discord")}
         disabled={loading !== null}
-        className="group relative flex-1 flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl bg-muted/30 backdrop-blur-md border border-border text-foreground transition-all duration-300 hover:bg-muted hover:scale-[1.02] active:scale-[0.98] shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+        variant="outline"
+        className="flex-1 gap-2.5"
       >
         <svg
           className="w-5 h-5 opacity-90 group-hover:opacity-100 transition-all"
@@ -87,7 +93,7 @@ export default function OAuthButtons() {
         <span className="font-medium text-sm">
           {loading === "discord" ? "Loading..." : "Discord"}
         </span>
-      </button>
+      </Button>
     </div>
   );
 }

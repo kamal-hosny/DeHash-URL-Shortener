@@ -7,10 +7,9 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import { testimonials } from "@/data";
+import { Button } from "@/components/ui/button";
 
 const Testimonials = () => {
- 
-
   return (
     <section className="py-12 sm:py-16 md:py-20 px-4 relative overflow-hidden">
       {/* Background Effects */}
@@ -30,7 +29,8 @@ const Testimonials = () => {
             What Our Users Say
           </h2>
           <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto px-4">
-            Join thousands of satisfied users who trust ShortURL for their link management needs
+            Join thousands of satisfied users who trust ShortURL for their link
+            management needs
           </p>
         </div>
 
@@ -86,7 +86,7 @@ const Testimonials = () => {
                 >
                   {/* Background Glow */}
                   <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  
+
                   {/* Quote Icon */}
                   <div className="relative mb-4 sm:mb-6">
                     <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/20 rounded-xl sm:rounded-2xl flex items-center justify-center backdrop-blur-sm">
@@ -127,18 +127,22 @@ const Testimonials = () => {
           </Swiper>
 
           {/* Custom Navigation Buttons */}
-          <button
-            className="swiper-button-prev-testimonials absolute left-2 sm:left-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-background/80 backdrop-blur-sm border border-border hover:bg-background shadow-lg flex items-center justify-center transition-all hover:scale-110 sm:-translate-x-4 md:-translate-x-6"
+          <Button
+            variant="outline"
+            size="icon"
+            className="swiper-button-prev-testimonials absolute left-2 sm:left-0 top-1/2 -translate-y-1/2 z-20 bg-background/80 backdrop-blur-sm hover:scale-110 sm:-translate-x-4 md:-translate-x-6"
             aria-label="Previous testimonial"
           >
-            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-foreground" />
-          </button>
-          <button
-            className="swiper-button-next-testimonials absolute right-2 sm:right-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-background/80 backdrop-blur-sm border border-border hover:bg-background shadow-lg flex items-center justify-center transition-all hover:scale-110 sm:translate-x-4 md:translate-x-6"
+            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="swiper-button-next-testimonials absolute right-2 sm:right-0 top-1/2 -translate-y-1/2 z-20 bg-background/80 backdrop-blur-sm hover:scale-110 sm:translate-x-4 md:translate-x-6"
             aria-label="Next testimonial"
           >
-            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-foreground" />
-          </button>
+            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+          </Button>
 
           {/* Custom Pagination */}
           <div className="swiper-pagination-testimonials flex justify-center gap-2 mt-8"></div>
