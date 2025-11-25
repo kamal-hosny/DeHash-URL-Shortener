@@ -1,6 +1,6 @@
 import LoginForm from "./signin-form";
-import BackButton from "@/components/atoms/BackButton";
-import Link from "@/components/atoms/Link";
+import BackButton from "@/components/ui/BackButton";
+import Link from "@/components/ui/Link";
 import OAuthButtons from "../oauth-buttons";
 
 const Page = () => {

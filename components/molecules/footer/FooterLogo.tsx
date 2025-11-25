@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Link from "@/components/atoms/Link";
+import Link from "@/components/ui/Link";
 import { logo } from "@/assets";
 
 export const FooterLogo = () => {

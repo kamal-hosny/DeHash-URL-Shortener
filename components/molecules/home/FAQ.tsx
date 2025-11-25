@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { HelpCircle } from "@/assets/icons/index";
 import { faqs } from "@/data";
-import Accordion from "@/components/atoms/Accordion";
-import Link from "@/components/atoms/Link";
+import Accordion from "@/components/ui/Accordion";
+import Link from "@/components/ui/Link";
 import { Button } from "@/components/ui/button";
 
 const FAQ = () => {

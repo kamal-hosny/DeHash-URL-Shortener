@@ -1,4 +1,4 @@
-import Link from "../../atoms/Link";
+import Link from "../../ui/Link";
 
 export const NAV_LINKS = [
   { name: "Home", href: "/" },

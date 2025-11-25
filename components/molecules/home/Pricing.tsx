@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "@/components/atoms/Link";
+import Link from "@/components/ui/Link";
 import { Check } from "@/assets/icons";
 import { plans as pricingPlans } from "@/data";
 import { useMemo, useState } from "react";
@@ -24,7 +24,6 @@ const Pricing = () => {
 
       <div className="max-w-7xl mx-auto relative z-10">
         {/* Header */}
-    
 
         {/* Pricing Cards */}
         <section className="mb-20">

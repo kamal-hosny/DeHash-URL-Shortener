@@ -1,4 +1,4 @@
-import Link from "@/components/atoms/Link";
+import Link from "@/components/ui/Link";
 import { SOCIAL_LINKS } from "./constants";
 
 export const SocialLinks = () => {

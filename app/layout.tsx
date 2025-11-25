@@ -28,9 +28,10 @@ export default function PublicLayout({
         <AuthSessionProvider>
           <ThemeProvider
             attribute="class"
-            defaultTheme="system"
-            enableSystem
+            defaultTheme="dark"
+            enableSystem={false}
             disableTransitionOnChange
+            forcedTheme="dark"
           >
             <QueryProvider>
               <SmoothScrollProvider>

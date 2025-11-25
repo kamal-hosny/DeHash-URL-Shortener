@@ -1,7 +1,6 @@
 import SignupForm from "./signup-form";
-import BackButton from "@/components/atoms/BackButton";
-import Link from "@/components/atoms/Link";
-import ThemeModeButton from "@/components/atoms/ModeToggle";
+import BackButton from "@/components/ui/BackButton";
+import Link from "@/components/ui/Link";
 import OAuthButtons from "../oauth-buttons";
 
 export default function SignupPage() {
@@ -9,10 +8,6 @@ export default function SignupPage() {
     <div className="flex flex-col lg:flex-row h-full text-white">
       {/* Left Section */}
       <div className="hidden lg:flex relative flex-1 items-end px-6 md:px-12 lg:px-20 pb-8 lg:pb-14">
-        {/* Buttons */}
-        <div className="absolute top-6 end-6 flex items-center gap-3 z-20">
-          <ThemeModeButton />
-        </div>
         <div className="absolute top-6 start-6 flex items-center gap-3 z-20">
           <BackButton />
         </div>
@@ -41,9 +36,8 @@ export default function SignupPage() {
         <div className="w-full max-w-[400px] px-6">
           {/* Mobile Header */}
           <div className="lg:hidden mb-6">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-start mb-6">
               <BackButton />
-              <ThemeModeButton />
             </div>
             <div className="text-center space-y-2">
               <h1 className="text-3xl font-semibold text-foreground">

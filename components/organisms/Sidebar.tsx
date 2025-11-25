@@ -7,7 +7,7 @@ import {
 } from "../molecules/sidebar/sidebar-constants";
 import { X } from "@/assets/icons";
 import { NavbarLogo } from "../molecules/navbar/NavbarLogo";
-import Link from "../atoms/Link";
+import Link from "../ui/Link";
 import UserProfile from "../molecules/sidebar/UserProfile";
 import { signOut } from "next-auth/react";
 import { useAuthDispatch } from "@/store/authStore";

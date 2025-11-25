@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "@/components/atoms/Link";
+import Link from "@/components/ui/Link";
 import { Button } from "@/components/ui/button";
 import { Home, ArrowLeft } from "lucide-react";
 

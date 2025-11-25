@@ -9,7 +9,7 @@ import {
   Link2,
 } from "@/assets/icons";
 import { Button } from "@/components/ui/button";
-import Link from "@/components/atoms/Link";
+import Link from "@/components/ui/Link";
 import { useState } from "react";
 import CreateQrModal from "./modals/CreateQrModal";
 

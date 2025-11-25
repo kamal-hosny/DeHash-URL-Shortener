@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import Link from "../../atoms/Link";
+import Link from "../../ui/Link";
 import { ChevronDown } from "@/assets/icons";
 import { USER_MENU } from "./constants";
 import { useAuthDispatch } from "@/store/authStore";
