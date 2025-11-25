@@ -1,6 +1,7 @@
 "use client";
 
 import NextLink from "next/link";
+import type { Route } from "next";
 import React, {
   ComponentPropsWithoutRef,
   useEffect,
@@ -8,11 +9,12 @@ import React, {
   useState,
 } from "react";
 
-type CustomLinkProps = Omit<
+type CustomLinkProps<T extends string = string> = Omit<
   ComponentPropsWithoutRef<typeof NextLink>,
-  "children"
+  "children" | "href"
 > & {
   children: React.ReactNode;
+  href: Route<T> | string;
 };
 
 const Link: React.FC<CustomLinkProps> = ({ children, href, ...rest }) => {
@@ -39,7 +41,7 @@ const Link: React.FC<CustomLinkProps> = ({ children, href, ...rest }) => {
 
   return (
     <NextLink
-      href={href as ComponentPropsWithoutRef<typeof NextLink>["href"]}
+      href={href as Route}
       ref={linkRef}
       prefetch={prefetching}
       {...rest}

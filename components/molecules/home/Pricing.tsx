@@ -24,15 +24,7 @@ const Pricing = () => {
 
       <div className="max-w-7xl mx-auto relative z-10">
         {/* Header */}
-        <div className="text-center mb-10 sm:mb-12 md:mb-16 space-y-3 sm:space-y-4">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-linear-to-r from-foreground via-primary to-accent px-4">
-            Simple, Transparent Pricing
-          </h2>
-          <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto px-4">
-            Choose the perfect plan for your needs. Start free and upgrade
-            anytime.
-          </p>
-        </div>
+    
 
         {/* Pricing Cards */}
         <section className="mb-20">
