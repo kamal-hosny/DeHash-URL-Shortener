@@ -38,7 +38,12 @@ const Link: React.FC<CustomLinkProps> = ({ children, href, ...rest }) => {
   }, []);
 
   return (
-    <NextLink href={href} ref={linkRef} prefetch={prefetching} {...rest}>
+    <NextLink
+      href={href as ComponentPropsWithoutRef<typeof NextLink>["href"]}
+      ref={linkRef}
+      prefetch={prefetching}
+      {...rest}
+    >
       {children}
     </NextLink>
   );

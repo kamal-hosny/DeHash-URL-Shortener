@@ -134,7 +134,10 @@ const LinkList = () => {
                     {link.isActive ? "Active" : "Archived"}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-center text-muted-foreground">
+                <td
+                  className="px-6 py-4 text-center text-muted-foreground"
+                  suppressHydrationWarning
+                >
                   {new Date(link.createdAt).toLocaleDateString(undefined, {
                     month: "short",
                     day: "numeric",

@@ -55,7 +55,7 @@
   --popover: oklch(92.98% 0.011 204.12);
   --popover-foreground: oklch(13.11% 0.008 232.14);
 
-  --primary: oklch(80.72% 0.049 212.80);
+  --primary: oklch(80.72% 0.049 212.8);
   --primary-foreground: oklch(13.11% 0.008 232.14);
 
   --secondary: oklch(51.96% 0.072 210.47);
@@ -72,9 +72,9 @@
 
   --border: oklch(80% 0.01 220);
   --input: oklch(85% 0.015 220);
-  --ring: oklch(80.72% 0.049 212.80);
+  --ring: oklch(80.72% 0.049 212.8);
 
-  --chart-1: oklch(80.72% 0.049 212.80);
+  --chart-1: oklch(80.72% 0.049 212.8);
   --chart-2: oklch(51.96% 0.072 210.47);
   --chart-3: oklch(72.95% 0.105 211.26);
   --chart-4: oklch(92.98% 0.011 204.12);
@@ -83,12 +83,12 @@
   /* Sidebar */
   --sidebar: oklch(92.98% 0.011 204.12);
   --sidebar-foreground: oklch(13.11% 0.008 232.14);
-  --sidebar-primary: oklch(80.72% 0.049 212.80);
+  --sidebar-primary: oklch(80.72% 0.049 212.8);
   --sidebar-primary-foreground: oklch(13.11% 0.008 232.14);
   --sidebar-accent: oklch(72.95% 0.105 211.26);
   --sidebar-accent-foreground: oklch(13.11% 0.008 232.14);
   --sidebar-border: oklch(80% 0.01 220);
-  --sidebar-ring: oklch(80.72% 0.049 212.80);
+  --sidebar-ring: oklch(80.72% 0.049 212.8);
 }
 
 .dark {
@@ -105,7 +105,7 @@
   --primary: oklch(72.95% 0.105 211.26);
   --primary-foreground: oklch(13.11% 0.008 232.14);
 
-  --secondary: oklch(80.72% 0.049 212.80);
+  --secondary: oklch(80.72% 0.049 212.8);
   --secondary-foreground: oklch(13.11% 0.008 232.14);
 
   --accent: oklch(51.96% 0.072 210.47);
@@ -122,7 +122,7 @@
   --ring: oklch(72.95% 0.105 211.26);
 
   --chart-1: oklch(72.95% 0.105 211.26);
-  --chart-2: oklch(80.72% 0.049 212.80);
+  --chart-2: oklch(80.72% 0.049 212.8);
   --chart-3: oklch(51.96% 0.072 210.47);
   --chart-4: oklch(13.11% 0.008 232.14);
   --chart-5: oklch(92.98% 0.011 204.12);
@@ -137,7 +137,6 @@
   --sidebar-border: oklch(35% 0.015 230 / 0.45);
   --sidebar-ring: oklch(72.95% 0.105 211.26);
 }
-
 
 @layer base {
   * {
@@ -192,4 +191,67 @@ html.lenis {
 .swiper-button-next-testimonials.swiper-button-disabled {
   opacity: 0.3;
   cursor: not-allowed;
+}
+
+/* Custom animations for loading and not-found pages */
+@keyframes gradient-shift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  50% {
+    transform: translateY(-20px) translateX(10px);
+  }
+}
+
+@keyframes float-delayed {
+  0%,
+  100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  50% {
+    transform: translateY(20px) translateX(-10px);
+  }
+}
+
+@keyframes gradient-x {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient-shift {
+  background-size: 200% 200%;
+  animation: gradient-shift 15s ease infinite;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: float-delayed 8s ease-in-out infinite;
+}
+
+.animate-gradient-x {
+  background-size: 200% auto;
+  animation: gradient-x 3s linear infinite;
+}
+
+.delay-700 {
+  animation-delay: 700ms;
 }
