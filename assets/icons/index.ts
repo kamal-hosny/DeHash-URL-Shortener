@@ -39,6 +39,15 @@ import {
   MousePointer2,
   Download,
   Share2,
+  CreditCard,
+  Users,
+  Globe,
+  Calendar,
+  Search,
+  Filter,
+  ArrowUpDown,
+  MoreHorizontal,
+  ArrowLeft,
   type LucideIcon
 } from "lucide-react";
 
@@ -83,6 +92,15 @@ export {
   MousePointer2,
   Download,
   Share2,
+  CreditCard,
+  Users,
+  Globe,
+  Calendar,
+  Search,
+  Filter,
+  ArrowUpDown,
+  MoreHorizontal,
+  ArrowLeft,
 
   type LucideIcon,
 };

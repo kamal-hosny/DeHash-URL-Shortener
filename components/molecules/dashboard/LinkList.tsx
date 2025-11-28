@@ -1,5 +1,4 @@
 import { useLinkStore, Link as LinkType } from "@/store/linkStore";
-import { useToast } from "@/hooks/useToast";
 import {
   Copy,
   ExternalLink,
@@ -12,19 +11,15 @@ import { Button } from "@/components/ui/button";
 import Link from "@/components/ui/Link";
 import { useState } from "react";
 import CreateQrModal from "./modals/CreateQrModal";
+import { useLinkActions } from "@/hooks/useLinkActions";
 
 const LinkList = () => {
-  const { links, removeLink } = useLinkStore();
-  const { toast } = useToast();
+  const { links } = useLinkStore();
+  const { copyToClipboard, navigateToAnalytics, deleteLink } = useLinkActions();
   const [selectedLink, setSelectedLink] = useState<LinkType | null>(null);
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({
-      title: "Copied!",
-      description: "Link copied to clipboard.",
-    });
-  };
+  // Get only the 5 most recent links
+  const recentLinks = links.slice(0, 5);
 
   return (
     <div className="bg-card text-card-foreground rounded-lg border border-border shadow-sm overflow-hidden">
@@ -37,9 +32,11 @@ const LinkList = () => {
             Manage your latest short links.
           </p>
         </div>
-        <Button variant="link" className="text-sm font-medium">
-          View All
-        </Button>
+        <Link href="/dashboard/links">
+          <Button variant="link" className="text-sm font-medium">
+            View All
+          </Button>
+        </Link>
       </div>
 
       <div className="overflow-x-auto">
@@ -67,7 +64,7 @@ const LinkList = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {links.map((link) => (
+            {recentLinks.map((link) => (
               <tr
                 key={link.id}
                 className="group hover:bg-accent/50 transition-colors"
@@ -145,7 +142,12 @@ const LinkList = () => {
                 </td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                    <Button variant="ghost" size="icon-sm" className="p-2">
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="p-2"
+                      onClick={() => navigateToAnalytics(link.id)}
+                    >
                       <BarChart2 size={16} />
                     </Button>
                     <Button
@@ -160,7 +162,7 @@ const LinkList = () => {
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      onClick={() => removeLink(link.id)}
+                      onClick={() => deleteLink(link.id)}
                       className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                     >
                       <Trash2 size={16} />
