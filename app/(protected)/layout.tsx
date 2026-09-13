@@ -1,7 +1,8 @@
 "use client"
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '@/components/organisms/Sidebar';
 import { Menu } from '@/assets/icons';
+import { useLinkStore } from '@/store/linkStore';
 
 export default function ProtectedLayout({
     children,
@@ -9,6 +10,18 @@ export default function ProtectedLayout({
     children: React.ReactNode;
 }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const { setLinks } = useLinkStore();
+
+    useEffect(() => {
+        fetch("/api/links")
+            .then((res) => res.json())
+            .then((data) => {
+                if (Array.isArray(data)) {
+                    setLinks(data);
+                }
+            })
+            .catch((err) => console.warn("Failed to sync links from server:", err));
+    }, [setLinks]);
 
     return (
         <div className="min-h-screen bg-background flex">

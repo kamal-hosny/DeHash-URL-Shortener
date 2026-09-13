@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useLinkStore } from "@/store/linkStore";
+import { useLinkStore, Link as LinkType } from "@/store/linkStore";
 import {
   MousePointer2,
   Users,
@@ -19,19 +19,72 @@ import LinkQrCard from "@/components/molecules/dashboard/LinkQrCard";
 import { useToast } from "@/hooks/useToast";
 import Link from "@/components/ui/Link";
 
+interface RecentClickEvent {
+  id: string;
+  clickedAt: string;
+  country?: string | null;
+  city?: string | null;
+  referrer?: string | null;
+  deviceType?: string | null;
+  browser?: string | null;
+  ipAddress?: string | null;
+}
+
+interface RealAnalytics {
+  totalClicks: number;
+  uniqueVisitors: number;
+  deviceData: { label: string; value: number; color?: string }[];
+  browserData: { label: string; value: number; color?: string }[];
+  locationData: { label: string; value: number }[];
+  referrerData: { label: string; value: number }[];
+  recentClicks: RecentClickEvent[];
+}
+
 export default function LinkAnalyticsPage() {
   const params = useParams();
   const router = useRouter();
-  const { links } = useLinkStore();
+  const { links, updateLink } = useLinkStore();
   const { toast } = useToast();
   const linkId = params.id as string;
 
+  const [fetchedLink, setFetchedLink] = useState<LinkType | null>(null);
+  const [analytics, setAnalytics] = useState<RealAnalytics | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
   const link = useMemo(
-    () => links.find((l) => l.id === linkId),
-    [links, linkId]
+    () => links.find((l) => l.id === linkId || l.shortCode === linkId) || fetchedLink,
+    [links, linkId, fetchedLink]
   );
 
-  if (!link) {
+  // Fetch real-time analytics and link details from backend
+  useEffect(() => {
+    let isMounted = true;
+
+    fetch(`/api/links/${linkId}/analytics`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!isMounted) return;
+        if (data.success) {
+          if (data.link) {
+            setFetchedLink(data.link);
+            updateLink(data.link.id, { clicks: data.analytics?.totalClicks ?? data.link.clicks });
+          }
+          if (data.analytics) {
+            setAnalytics(data.analytics);
+          }
+        }
+      })
+      .catch((err) => console.warn("Error fetching analytics:", err))
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [linkId, updateLink]);
+
+  if (!link && !isLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] space-y-4">
         <h2 className="text-2xl font-bold">Link not found</h2>
@@ -45,6 +98,14 @@ export default function LinkAnalyticsPage() {
     );
   }
 
+  if (!link) {
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <div className="text-muted-foreground animate-pulse">Loading analytics...</div>
+      </div>
+    );
+  }
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast({
@@ -53,53 +114,31 @@ export default function LinkAnalyticsPage() {
     });
   };
 
-  const fullShortUrl = `${window.location.origin}/r/${link.shortCode}`;
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const fullShortUrl = `${origin}/r/${link.shortCode}`;
 
-  // Mock data for charts - specific to this link
-  const deviceData = [
-    {
-      label: "Desktop",
-      value: Math.floor(link.clicks * 0.6),
-      color: "#3b82f6",
-    },
-    {
-      label: "Mobile",
-      value: Math.floor(link.clicks * 0.35),
-      color: "#8b5cf6",
-    },
-    {
-      label: "Tablet",
-      value: Math.floor(link.clicks * 0.05),
-      color: "#10b981",
-    },
-  ];
+  const currentClicks = analytics?.totalClicks ?? link.clicks;
+  const currentUniqueVisitors =
+    analytics?.uniqueVisitors ?? Math.floor(currentClicks * 0.8);
+  const topSource = analytics?.referrerData?.[0]?.label || "Direct";
 
-  const browserData = [
-    {
-      label: "Chrome",
-      value: Math.floor(link.clicks * 0.55),
-      color: "#f59e0b",
-    },
-    {
-      label: "Safari",
-      value: Math.floor(link.clicks * 0.25),
-      color: "#06b6d4",
-    },
-    {
-      label: "Firefox",
-      value: Math.floor(link.clicks * 0.15),
-      color: "#ec4899",
-    },
-    { label: "Edge", value: Math.floor(link.clicks * 0.05), color: "#6366f1" },
-  ];
+  const deviceData = analytics?.deviceData?.length
+    ? analytics.deviceData
+    : [
+        { label: "Desktop", value: 0, color: "#3b82f6" },
+        { label: "Mobile", value: 0, color: "#8b5cf6" },
+      ];
 
-  const locationData = [
-    { label: "United States", value: Math.floor(link.clicks * 0.4) },
-    { label: "United Kingdom", value: Math.floor(link.clicks * 0.15) },
-    { label: "Germany", value: Math.floor(link.clicks * 0.1) },
-    { label: "India", value: Math.floor(link.clicks * 0.1) },
-    { label: "Other", value: Math.floor(link.clicks * 0.25) },
-  ];
+  const browserData = analytics?.browserData?.length
+    ? analytics.browserData
+    : [
+        { label: "Chrome", value: 0, color: "#f59e0b" },
+        { label: "Safari", value: 0, color: "#06b6d4" },
+      ];
+
+  const locationData = analytics?.locationData?.length
+    ? analytics.locationData
+    : [{ label: "No visitors yet", value: 0 }];
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -186,70 +225,154 @@ export default function LinkAnalyticsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Clicks"
-          value={link.clicks.toLocaleString()}
+          value={currentClicks.toLocaleString()}
           icon={MousePointer2}
-          trend={{ value: 12, isPositive: true }}
+          trend={currentClicks > 0 ? { value: 100, isPositive: true } : undefined}
         />
         <StatCard
           title="Unique Visitors"
-          value={Math.floor(link.clicks * 0.8).toLocaleString()}
+          value={currentUniqueVisitors.toLocaleString()}
           icon={Users}
-          trend={{ value: 8, isPositive: true }}
+          trend={currentUniqueVisitors > 0 ? { value: 100, isPositive: true } : undefined}
         />
+        <StatCard title="Top Source" value={topSource} icon={Globe} />
         <StatCard
-          title="Avg. Engagement"
-          value="45s"
-          icon={Calendar} // Placeholder
+          title="Top Country"
+          value={locationData[0]?.label || "N/A"}
+          icon={Globe}
         />
-        <StatCard title="Top Source" value="Direct" icon={Globe} />
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Main Charts Column */}
-        <div className="xl:col-span-2 space-y-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="xl:col-span-2 space-y-6">
+          {/* Row 1: Devices & Browsers */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <AnalyticsChart
               title="Devices"
+              subtitle="Device types breakdown"
               data={deviceData}
-              total={link.clicks}
+              total={currentClicks}
             />
             <AnalyticsChart
               title="Browsers"
+              subtitle="Top web browsers used"
               data={browserData}
-              total={link.clicks}
+              total={currentClicks}
             />
           </div>
-          <AnalyticsChart
-            title="Top Locations"
-            data={locationData}
-            total={link.clicks}
-          />
+
+          {/* Row 2: Locations & Referral Sources (Side by Side) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <AnalyticsChart
+              title="Visitor Locations"
+              subtitle="Countries & regions"
+              data={locationData}
+              total={currentClicks}
+            />
+            <AnalyticsChart
+              title="Top Sources"
+              subtitle="Referrers & platforms"
+              data={analytics?.referrerData?.length ? analytics.referrerData : [{ label: topSource || "Direct", value: currentClicks }]}
+              total={currentClicks}
+            />
+          </div>
+
+          {/* Recent Clicks Activity Log */}
+          <div className="bg-card border border-border/80 rounded-xl p-6 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-base text-foreground tracking-tight">
+                  Recent Visitors Log (أحدث الزيارات)
+                  Recent Visitors Activity
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Live real-time activity stream for this link
+                </p>
+              </div>
+              {analytics?.recentClicks && analytics.recentClicks.length > 0 && (
+                <span className="text-xs font-mono font-medium px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                  ● Live Active
+                </span>
+              )}
+            </div>
+
+            {analytics?.recentClicks && analytics.recentClicks.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                  <thead className="text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border/60 bg-muted/20">
+                    <tr>
+                      <th className="py-2 px-3 rounded-l-md">Time</th>
+                      <th className="py-2 px-3">Location</th>
+                      <th className="py-2 px-3">Platform</th>
+                      <th className="py-2 px-3 rounded-r-md">Device</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/40">
+                    {analytics.recentClicks.map((c, i) => (
+                      <tr key={c.id || i} className="hover:bg-muted/30 transition-colors">
+                        <td className="py-2.5 px-3 text-muted-foreground whitespace-nowrap text-xs font-mono">
+                          {new Date(c.clickedAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            second: "2-digit",
+                          })}
+                        </td>
+                        <td className="py-2.5 px-3 font-medium text-foreground whitespace-nowrap text-xs">
+                          {c.country || "Unknown"}
+                          {c.city && c.city !== "Unknown" ? ` (${c.city})` : ""}
+                        </td>
+                        <td className="py-2.5 px-3 text-primary font-medium whitespace-nowrap text-xs">
+                          {c.referrer || "Direct"}
+                        </td>
+                        <td className="py-2.5 px-3 text-muted-foreground whitespace-nowrap text-xs">
+                          {c.deviceType || "Desktop"} • {c.browser || "Unknown"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground space-y-1.5">
+                <span className="text-2xl">⚡</span>
+                <p className="text-sm font-medium">No live visitor events yet</p>
+                <p className="text-xs text-muted-foreground/80">
+                  Share this link to start capturing real-time visitor streams
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Sidebar Column */}
-        <div className="space-y-8">
+        <div className="space-y-6">
           <LinkQrCard url={fullShortUrl} />
 
-          <div className="bg-card border border-border rounded-lg p-6">
-            <h3 className="font-medium text-lg mb-4">Link Insights</h3>
-            <div className="space-y-4 text-sm text-muted-foreground">
-              <p>
-                This link is performing <strong>better than 85%</strong> of your
-                other links.
-              </p>
-              <div className="pt-4 border-t border-border">
-                <p className="text-xs uppercase font-semibold tracking-wider mb-2">
-                  Recommendation
-                </p>
-                <p>
-                  Consider sharing this link on LinkedIn to reach more
-                  professional users.
-                </p>
+          <div className="bg-card border border-border/80 rounded-xl p-5 shadow-sm space-y-4">
+            <h3 className="font-semibold text-base tracking-tight">Tracking Insights</h3>
+            <div className="space-y-3 text-sm">
+              <div className="flex items-center justify-between pb-2.5 border-b border-border/60">
+                <span className="text-muted-foreground text-xs font-medium">Total Clicks</span>
+                <span className="font-semibold text-foreground">{currentClicks}</span>
+              </div>
+              <div className="flex items-center justify-between pb-2.5 border-b border-border/60">
+                <span className="text-muted-foreground text-xs font-medium">Unique Visitors</span>
+                <span className="font-semibold text-foreground">{currentUniqueVisitors}</span>
+              </div>
+              <div className="flex items-center justify-between pb-2.5 border-b border-border/60">
+                <span className="text-muted-foreground text-xs font-medium">Top Platform</span>
+                <span className="font-semibold text-primary">{topSource}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground text-xs font-medium">Top Country</span>
+                <span className="font-semibold text-foreground">{locationData[0]?.label || "N/A"}</span>
               </div>
             </div>
           </div>
         </div>
       </div>
+
     </div>
   );
 }

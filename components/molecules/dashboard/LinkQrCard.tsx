@@ -104,7 +104,7 @@ const LinkQrCard: React.FC<LinkQrCardProps> = ({ url }) => {
   };
 
   return (
-    <Card className="h-full">
+    <Card className="border border-border/80 shadow-sm">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Share2 className="w-5 h-5" />
@@ -114,15 +114,15 @@ const LinkQrCard: React.FC<LinkQrCardProps> = ({ url }) => {
           Customize and download the QR code for this link.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-5">
         {/* QR Code Preview */}
         <div
-          className="relative flex items-center justify-center p-8 rounded-xl border border-border shadow-sm transition-colors duration-300"
+          className="relative flex items-center justify-center p-5 rounded-xl border border-border shadow-sm transition-colors duration-300 max-w-[220px] mx-auto w-full aspect-square"
           style={{ backgroundColor: selectedStyle.bg }}
           ref={qrRef}
         >
           <QRCode
-            size={200}
+            size={175}
             style={{ height: "auto", maxWidth: "100%", width: "100%" }}
             value={url}
             fgColor={selectedStyle.fg}
@@ -132,37 +132,36 @@ const LinkQrCard: React.FC<LinkQrCardProps> = ({ url }) => {
         </div>
 
         {/* Style Selector */}
-        <div className="space-y-3">
-          <label className="text-sm font-medium text-muted-foreground">
+        <div className="space-y-2.5">
+          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Select Theme
           </label>
-          <div className="flex flex-wrap gap-3">
+          <div className="grid grid-cols-7 gap-2 pt-0.5">
             {QR_STYLES.map((style) => (
               <button
                 key={style.name}
                 onClick={() => setSelectedStyle(style)}
                 className={cn(
-                  "w-8 h-8 rounded-full border-2 transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+                  "w-full aspect-square max-w-[34px] rounded-full border-2 transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 flex items-center justify-center mx-auto",
                   selectedStyle.name === style.name
-                    ? "border-primary ring-2 ring-ring ring-offset-1"
-                    : "border-accent hover:border-border"
+                    ? "border-primary ring-2 ring-ring ring-offset-1 scale-105"
+                    : "border-border/60 hover:border-border"
                 )}
                 style={{ backgroundColor: style.bg }}
                 title={style.name}
               >
                 {/* Show checkmark if selected, contrasting color */}
                 {selectedStyle.name === style.name && (
-                  <span
-                    className="flex items-center justify-center w-full h-full"
+                  <Check
+                    className="w-3.5 h-3.5 flex-shrink-0"
                     style={{ color: style.fg }}
-                  >
-                    <Check className="w-4 h-4" />
-                  </span>
+                  />
                 )}
               </button>
             ))}
           </div>
         </div>
+
 
         {/* Actions */}
         <div className="flex gap-3">

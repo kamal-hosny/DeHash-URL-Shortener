@@ -9,7 +9,11 @@ import {
   setCachedLink,
   invalidateCachedLink,
   incrementCachedClicks,
+  getCachedClicks,
+  recordAnalyticsInRedis,
+  getLinkAnalyticsBreakdown,
 } from "@/lib/redis/links-cache";
+import { ClickMetadata } from "@/lib/analytics/tracker";
 import { getDb } from "@/lib/db/client";
 import { shortLinks, users, linkAnalytics } from "@/lib/db/schema";
 
@@ -36,12 +40,51 @@ async function saveLocalBackup(links: Link[]): Promise<void> {
 }
 
 /**
- * Retrieves stored links from Neon PostgreSQL, fallback to local backup if DB offline.
+ * Retrieves stored links from Neon PostgreSQL and synchronizes legacy links from local backup.
  */
 export async function getStoredLinks(userId?: string): Promise<Link[]> {
+  const localBackup = await getLocalBackupLinks();
+
   if (process.env.DATABASE_URL) {
     try {
       const db = getDb();
+
+      // 1. Auto-sync any legacy links from localBackup into Neon DB if not present
+      for (const local of localBackup) {
+        try {
+          const exists = await db.query.shortLinks.findFirst({
+            where: eq(shortLinks.shortCode, local.shortCode),
+          });
+          if (!exists) {
+            let targetUserId = userId;
+            if (!targetUserId) {
+              const firstUser = await db.query.users.findFirst();
+              targetUserId = firstUser?.id;
+            }
+            if (targetUserId) {
+              const originalUrlHash = crypto
+                .createHash("sha256")
+                .update(local.originalUrl)
+                .digest("hex");
+              await db
+                .insert(shortLinks)
+                .values({
+                  userId: targetUserId,
+                  originalUrl: local.originalUrl,
+                  originalUrlHash,
+                  shortCode: local.shortCode,
+                  isActive: local.isActive ?? true,
+                  createdAt: new Date(local.createdAt || Date.now()),
+                })
+                .onConflictDoNothing();
+            }
+          }
+        } catch {
+          // Ignore individual sync errors
+        }
+      }
+
+      // 2. Fetch rows from Neon PostgreSQL
       const rows = userId
         ? await db.query.shortLinks.findMany({
             where: eq(shortLinks.userId, userId),
@@ -52,28 +95,38 @@ export async function getStoredLinks(userId?: string): Promise<Link[]> {
           });
 
       if (rows && rows.length > 0) {
-        return rows.map((r) => ({
-          id: r.id,
-          originalUrl: r.originalUrl,
-          shortCode: r.shortCode,
-          clicks: 0,
-          isActive: r.isActive,
-          createdAt: r.createdAt.toISOString(),
-        }));
+        const linksWithClicks = await Promise.all(
+          rows.map(async (r) => {
+            const cachedClicks = await getCachedClicks(r.shortCode);
+            const localMatch = localBackup.find(
+              (l) => l.shortCode.toLowerCase() === r.shortCode.toLowerCase()
+            );
+            return {
+              id: r.id,
+              name: localMatch?.name,
+              originalUrl: r.originalUrl,
+              shortCode: r.shortCode,
+              clicks: cachedClicks ?? localMatch?.clicks ?? 0,
+              isActive: r.isActive,
+              createdAt: r.createdAt.toISOString(),
+            };
+          })
+        );
+        return linksWithClicks;
       }
     } catch (dbErr) {
       console.warn("Neon DB getStoredLinks warning, using local fallback:", dbErr);
     }
   }
 
-  return await getLocalBackupLinks();
+  return localBackup;
 }
 
 /**
  * Retrieves a link by its short code with multi-tier resolution:
  * 1. Redis Cache (Fast path < 5ms)
  * 2. Neon PostgreSQL (Primary source of truth)
- * 3. Local file backup (Offline fallback)
+ * 3. Local file backup (Offline fallback & auto-sync to DB/Redis)
  */
 export async function getLinkByShortCode(shortCode: string): Promise<Link | null> {
   if (!shortCode) return null;
@@ -98,11 +151,12 @@ export async function getLinkByShortCode(shortCode: string): Promise<Link | null
       });
 
       if (found) {
+        const cachedClicks = await getCachedClicks(cleanCode);
         const link: Link = {
           id: found.id,
           originalUrl: found.originalUrl,
           shortCode: found.shortCode,
-          clicks: 0,
+          clicks: cachedClicks ?? 0,
           isActive: found.isActive,
           createdAt: found.createdAt.toISOString(),
         };
@@ -116,7 +170,7 @@ export async function getLinkByShortCode(shortCode: string): Promise<Link | null
     }
   }
 
-  // Tier 3: Local file fallback
+  // Tier 3: Local file fallback & auto-sync
   const localLinks = await getLocalBackupLinks();
   const localFound = localLinks.find(
     (l) => l.shortCode.toLowerCase() === cleanCode.toLowerCase()
@@ -125,11 +179,92 @@ export async function getLinkByShortCode(shortCode: string): Promise<Link | null
   if (localFound) {
     // Populate Redis cache
     await setCachedLink(localFound);
+
+    // Sync to Neon DB if not present
+    if (process.env.DATABASE_URL) {
+      try {
+        const db = getDb();
+        const firstUser = await db.query.users.findFirst();
+        if (firstUser) {
+          const originalUrlHash = crypto
+            .createHash("sha256")
+            .update(localFound.originalUrl)
+            .digest("hex");
+          await db
+            .insert(shortLinks)
+            .values({
+              userId: firstUser.id,
+              originalUrl: localFound.originalUrl,
+              originalUrlHash,
+              shortCode: localFound.shortCode,
+              isActive: localFound.isActive ?? true,
+              createdAt: new Date(localFound.createdAt || Date.now()),
+            })
+            .onConflictDoNothing();
+        }
+      } catch {
+        // Ignore background sync error
+      }
+    }
+
     return localFound;
   }
 
   return null;
 }
+
+/**
+ * Universal lookup by either shortCode, DB UUID, or local link ID.
+ */
+export async function getLinkByIdOrShortCode(identifier: string): Promise<Link | null> {
+  if (!identifier) return null;
+  const clean = identifier.trim();
+
+  // 1. Direct shortCode match
+  const byCode = await getLinkByShortCode(clean);
+  if (byCode) return byCode;
+
+  // 2. Check local backup by ID or shortCode
+  const localBackup = await getLocalBackupLinks();
+  const localMatch = localBackup.find(
+    (l) => l.id === clean || l.shortCode.toLowerCase() === clean.toLowerCase()
+  );
+  if (localMatch) {
+    await setCachedLink(localMatch);
+    return localMatch;
+  }
+
+  // 3. Check DB by UUID id
+  if (process.env.DATABASE_URL) {
+    try {
+      const db = getDb();
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(clean);
+      if (isUuid) {
+        const found = await db.query.shortLinks.findFirst({
+          where: eq(shortLinks.id, clean),
+        });
+        if (found) {
+          const cachedClicks = await getCachedClicks(found.shortCode);
+          const link: Link = {
+            id: found.id,
+            originalUrl: found.originalUrl,
+            shortCode: found.shortCode,
+            clicks: cachedClicks ?? 0,
+            isActive: found.isActive,
+            createdAt: found.createdAt.toISOString(),
+          };
+          await setCachedLink(link);
+          return link;
+        }
+      }
+    } catch {
+      // Ignore
+    }
+  }
+
+  return null;
+}
+
 
 /**
  * Checks if a short code is already taken across Redis and Database.
@@ -156,7 +291,7 @@ export async function generateUniqueShortCode(
     // 2. Check Database & Redis
     const exists = await isShortCodeTaken(code);
 
-    // 3. هل موجود؟
+    // 3. Exists?
     // No -> Return unique code to be saved
     if (!exists) {
       return code;
@@ -251,31 +386,73 @@ export async function saveLink(newLink: Link, userId?: string): Promise<Link> {
  */
 export async function recordLinkClick(
   shortCode: string,
-  metadata?: { referrer?: string; ipAddress?: string; userAgent?: string }
+  metadata?: ClickMetadata
 ): Promise<void> {
   if (!shortCode) return;
+  const cleanCode = shortCode.trim();
 
-  // 1. Atomic increment in Redis (Fast path)
+  // 1. Atomic increment and breakdown in Redis (Fast path < 5ms)
   try {
-    await incrementCachedClicks(shortCode);
+    await incrementCachedClicks(cleanCode);
+    if (metadata) {
+      await recordAnalyticsInRedis(cleanCode, {
+        ipAddress: metadata.ipAddress,
+        country: metadata.country,
+        city: metadata.city,
+        deviceType: metadata.deviceType,
+        browser: metadata.browser,
+        referrer: metadata.referrer,
+      });
+    }
   } catch (redisErr) {
     console.warn("Redis click increment warning:", redisErr);
   }
 
-  // 2. Record analytics in Neon PostgreSQL
+  // 2. Record detailed analytics event in Neon PostgreSQL
   if (process.env.DATABASE_URL) {
     try {
       const db = getDb();
-      const found = await db.query.shortLinks.findFirst({
-        where: eq(shortLinks.shortCode, shortCode),
+      let found = await db.query.shortLinks.findFirst({
+        where: eq(shortLinks.shortCode, cleanCode),
       });
+
+      // If link not yet in Neon DB, auto-create it from local backup or fallback
+      if (!found) {
+        const localBackup = await getLocalBackupLinks();
+        const localMatch = localBackup.find(
+          (l) => l.shortCode.toLowerCase() === cleanCode.toLowerCase()
+        );
+        const firstUser = await db.query.users.findFirst();
+        if (firstUser && localMatch) {
+          const originalUrlHash = crypto
+            .createHash("sha256")
+            .update(localMatch.originalUrl)
+            .digest("hex");
+          const inserted = await db
+            .insert(shortLinks)
+            .values({
+              userId: firstUser.id,
+              originalUrl: localMatch.originalUrl,
+              originalUrlHash,
+              shortCode: localMatch.shortCode,
+              isActive: localMatch.isActive ?? true,
+            })
+            .returning();
+          found = inserted[0];
+        }
+      }
 
       if (found) {
         await db.insert(linkAnalytics).values({
           linkId: found.id,
           referrer: metadata?.referrer || null,
+          country: metadata?.country || null,
+          city: metadata?.city || null,
+          deviceType: metadata?.deviceType || null,
+          browser: metadata?.browser || null,
           ipAddress: metadata?.ipAddress || null,
           userAgent: metadata?.userAgent || null,
+          clickedAt: new Date(),
         });
       }
     } catch (dbErr) {
@@ -287,13 +464,158 @@ export async function recordLinkClick(
   try {
     const local = await getLocalBackupLinks();
     const link = local.find(
-      (l) => l.shortCode.toLowerCase() === shortCode.toLowerCase()
+      (l) => l.shortCode.toLowerCase() === cleanCode.toLowerCase()
     );
     if (link) {
       link.clicks = (link.clicks || 0) + 1;
       await saveLocalBackup(local);
     }
-  } catch (e) {
+  } catch {
     // Ignore local backup click errors
   }
 }
+
+/**
+ * Retrieves comprehensive aggregated and individual analytics for a short link.
+ */
+export async function getLinkAnalyticsData(shortCode: string) {
+  if (!shortCode) return null;
+  const cleanCode = shortCode.trim();
+
+  // 1. Fetch pre-aggregated breakdown from Redis
+  const redisBreakdown = await getLinkAnalyticsBreakdown(cleanCode);
+
+  // 2. Query Neon PostgreSQL for historical events
+  let dbEvents: Array<{
+    id: string;
+    clickedAt: Date;
+    referrer: string | null;
+    country: string | null;
+    city: string | null;
+    deviceType: string | null;
+    browser: string | null;
+    ipAddress: string | null;
+    userAgent: string | null;
+  }> = [];
+
+  if (process.env.DATABASE_URL) {
+    try {
+      const db = getDb();
+      const link = await db.query.shortLinks.findFirst({
+        where: eq(shortLinks.shortCode, cleanCode),
+      });
+
+      if (link) {
+        dbEvents = await db.query.linkAnalytics.findMany({
+          where: eq(linkAnalytics.linkId, link.id),
+          orderBy: [desc(linkAnalytics.clickedAt)],
+          limit: 100,
+        });
+      }
+    } catch (err) {
+      console.warn("Neon DB getLinkAnalyticsData error:", err);
+    }
+  }
+
+  // Compute stats from DB events
+  const dbCountryMap: Record<string, number> = {};
+  const dbDeviceMap: Record<string, number> = {};
+  const dbBrowserMap: Record<string, number> = {};
+  const dbReferrerMap: Record<string, number> = {};
+  const dbUniqueIps = new Set<string>();
+
+  dbEvents.forEach((e) => {
+    if (e.ipAddress) dbUniqueIps.add(e.ipAddress);
+    if (e.country) dbCountryMap[e.country] = (dbCountryMap[e.country] || 0) + 1;
+    if (e.deviceType) dbDeviceMap[e.deviceType] = (dbDeviceMap[e.deviceType] || 0) + 1;
+    if (e.browser) dbBrowserMap[e.browser] = (dbBrowserMap[e.browser] || 0) + 1;
+    if (e.referrer) dbReferrerMap[e.referrer] = (dbReferrerMap[e.referrer] || 0) + 1;
+  });
+
+  // Merge Redis and DB stats (take max for each counter to prevent undercounting)
+  const totalClicks = Math.max(dbEvents.length, redisBreakdown?.totalClicks || 0);
+  const uniqueVisitors = Math.max(
+    dbUniqueIps.size,
+    redisBreakdown?.uniqueVisitors || (totalClicks > 0 ? 1 : 0)
+  );
+
+  const countryMap: Record<string, number> = { ...(redisBreakdown?.countries || {}) };
+  Object.entries(dbCountryMap).forEach(([k, v]) => {
+    countryMap[k] = Math.max(countryMap[k] || 0, v);
+  });
+
+  const deviceMap: Record<string, number> = { ...(redisBreakdown?.devices || {}) };
+  Object.entries(dbDeviceMap).forEach(([k, v]) => {
+    deviceMap[k] = Math.max(deviceMap[k] || 0, v);
+  });
+
+  const browserMap: Record<string, number> = { ...(redisBreakdown?.browsers || {}) };
+  Object.entries(dbBrowserMap).forEach(([k, v]) => {
+    browserMap[k] = Math.max(browserMap[k] || 0, v);
+  });
+
+  const referrerMap: Record<string, number> = { ...(redisBreakdown?.referrers || {}) };
+  Object.entries(dbReferrerMap).forEach(([k, v]) => {
+    referrerMap[k] = Math.max(referrerMap[k] || 0, v);
+  });
+
+  const locationData = Object.entries(countryMap)
+    .filter(([label]) => label && label !== "Unknown")
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value);
+
+  if (locationData.length === 0 && totalClicks > 0) {
+    const unknownCount = countryMap["Unknown"] || totalClicks;
+    locationData.push({ label: "Other / Direct", value: unknownCount });
+  }
+
+  const deviceData = Object.entries(deviceMap)
+    .map(([label, value]) => ({
+      label,
+      value,
+      color: label === "Desktop" ? "#3b82f6" : label === "Mobile" ? "#8b5cf6" : "#10b981",
+    }))
+    .sort((a, b) => b.value - a.value);
+
+  const browserColors: Record<string, string> = {
+    Chrome: "#f59e0b",
+    Safari: "#06b6d4",
+    Firefox: "#ec4899",
+    Edge: "#6366f1",
+    Opera: "#ef4444",
+  };
+
+  const browserData = Object.entries(browserMap)
+    .map(([label, value]) => ({
+      label,
+      value,
+      color: browserColors[label] || "#a855f7",
+    }))
+    .sort((a, b) => b.value - a.value);
+
+  const referrerData = Object.entries(referrerMap)
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value);
+
+  const recentClicks = dbEvents.slice(0, 20).map((e) => ({
+    id: e.id,
+    clickedAt: e.clickedAt.toISOString(),
+    country: e.country,
+    city: e.city,
+    referrer: e.referrer,
+    deviceType: e.deviceType,
+    browser: e.browser,
+    ipAddress: e.ipAddress,
+  }));
+
+  return {
+    totalClicks,
+    uniqueVisitors,
+    locationData,
+    deviceData,
+    browserData,
+    referrerData,
+    recentClicks,
+  };
+}
+

@@ -48,8 +48,10 @@ import {
   ArrowUpDown,
   MoreHorizontal,
   ArrowLeft,
+  ArrowRight,
   type LucideIcon
 } from "lucide-react";
+
 
 export {
   EyeIcon,
@@ -101,6 +103,8 @@ export {
   ArrowUpDown,
   MoreHorizontal,
   ArrowLeft,
+  ArrowRight,
 
   type LucideIcon,
 };
+

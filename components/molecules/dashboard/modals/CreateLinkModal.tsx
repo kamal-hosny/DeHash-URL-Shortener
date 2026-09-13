@@ -78,6 +78,7 @@ export const CreateLinkModal: React.FC<CreateLinkModalProps> = ({
     }
 
     // Client fallback: Generate Code -> Check Store -> هل موجود؟ -> Yes: Generate Again / No: Save
+    // Client fallback: Generate Code -> Check Store -> Exists? -> Yes: Generate Again / No: Save
     let fallbackCode = generateShortCode();
     let attempts = 0;
     while (
