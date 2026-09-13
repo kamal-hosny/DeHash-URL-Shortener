@@ -8,9 +8,14 @@ import {
 import { Link } from "@/store/linkStore";
 import { normalizeUrl } from "@/lib/utils";
 
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth/auth";
+
 export async function GET() {
   try {
-    const links = await getStoredLinks();
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?.id;
+    const links = await getStoredLinks(userId);
     return NextResponse.json(links);
   } catch (error) {
     console.error("Error fetching links:", error);
@@ -70,7 +75,9 @@ export async function POST(req: NextRequest) {
       createdAt: body.createdAt || new Date().toISOString(),
     };
 
-    const saved = await saveLink(newLink);
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?.id;
+    const saved = await saveLink(newLink, userId);
 
     return NextResponse.json({ success: true, link: saved });
   } catch (error) {

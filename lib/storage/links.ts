@@ -1,54 +1,104 @@
-//  Storage Layer
 import fs from "fs/promises";
 import path from "path";
+import crypto from "crypto";
+import { eq, desc } from "drizzle-orm";
 import { Link } from "@/store/linkStore";
-import { generateShortCode } from "@/utils/generateShortCode";
-
+import { generateShortCode } from "@/lib/utils";
+import {
+  getCachedLink,
+  setCachedLink,
+  invalidateCachedLink,
+  incrementCachedClicks,
+} from "@/lib/redis/links-cache";
+import { getDb } from "@/lib/db/client";
+import { shortLinks, users, linkAnalytics } from "@/lib/db/schema";
 
 const DATA_FILE_PATH = path.join(process.cwd(), "data", "links.json");
 
-const initialLinks: Link[] = [];
-
-export async function getStoredLinks(): Promise<Link[]> {
+// Helper to safely get local file backup links
+async function getLocalBackupLinks(): Promise<Link[]> {
   try {
     const content = await fs.readFile(DATA_FILE_PATH, "utf-8");
     const parsed = JSON.parse(content);
-    if (Array.isArray(parsed)) {
-      return parsed;
-    }
-    return initialLinks;
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
-    // If file doesn't exist, create it with initialLinks
-    try {
-      await fs.writeFile(
-        DATA_FILE_PATH,
-        JSON.stringify(initialLinks, null, 2),
-        "utf-8"
-      );
-    } catch (e) {
-      console.error("Error writing initial links file:", e);
-    }
-    return initialLinks;
+    return [];
   }
 }
 
-export async function getLinkByShortCode(
-  shortCode: string
-): Promise<Link | null> {
-  if (!shortCode) return null;
+// Helper to safely save local file backup
+async function saveLocalBackup(links: Link[]): Promise<void> {
+  try {
+    await fs.writeFile(DATA_FILE_PATH, JSON.stringify(links, null, 2), "utf-8");
+  } catch (e) {
+    console.warn("Local file backup warning:", e);
+  }
+}
 
-  // 1. Try Neon DB if DATABASE_URL is configured
+/**
+ * Retrieves stored links from Neon PostgreSQL, fallback to local backup if DB offline.
+ */
+export async function getStoredLinks(userId?: string): Promise<Link[]> {
   if (process.env.DATABASE_URL) {
     try {
-      const { getDb } = await import("@/lib/db/client");
-      const { shortLinks } = await import("@/lib/db/schema");
-      const { eq } = await import("drizzle-orm");
+      const db = getDb();
+      const rows = userId
+        ? await db.query.shortLinks.findMany({
+            where: eq(shortLinks.userId, userId),
+            orderBy: [desc(shortLinks.createdAt)],
+          })
+        : await db.query.shortLinks.findMany({
+            orderBy: [desc(shortLinks.createdAt)],
+          });
+
+      if (rows && rows.length > 0) {
+        return rows.map((r) => ({
+          id: r.id,
+          originalUrl: r.originalUrl,
+          shortCode: r.shortCode,
+          clicks: 0,
+          isActive: r.isActive,
+          createdAt: r.createdAt.toISOString(),
+        }));
+      }
+    } catch (dbErr) {
+      console.warn("Neon DB getStoredLinks warning, using local fallback:", dbErr);
+    }
+  }
+
+  return await getLocalBackupLinks();
+}
+
+/**
+ * Retrieves a link by its short code with multi-tier resolution:
+ * 1. Redis Cache (Fast path < 5ms)
+ * 2. Neon PostgreSQL (Primary source of truth)
+ * 3. Local file backup (Offline fallback)
+ */
+export async function getLinkByShortCode(shortCode: string): Promise<Link | null> {
+  if (!shortCode) return null;
+  const cleanCode = shortCode.trim();
+
+  // Tier 1: Check Redis Cache
+  try {
+    const cached = await getCachedLink(cleanCode);
+    if (cached) {
+      return cached;
+    }
+  } catch (redisErr) {
+    console.warn("Redis lookup error:", redisErr);
+  }
+
+  // Tier 2: Check Neon PostgreSQL
+  if (process.env.DATABASE_URL) {
+    try {
       const db = getDb();
       const found = await db.query.shortLinks.findFirst({
-        where: eq(shortLinks.shortCode, shortCode),
+        where: eq(shortLinks.shortCode, cleanCode),
       });
+
       if (found) {
-        return {
+        const link: Link = {
           id: found.id,
           originalUrl: found.originalUrl,
           shortCode: found.shortCode,
@@ -56,23 +106,33 @@ export async function getLinkByShortCode(
           isActive: found.isActive,
           createdAt: found.createdAt.toISOString(),
         };
+
+        // Cache in Redis for subsequent requests
+        await setCachedLink(link);
+        return link;
       }
     } catch (dbErr) {
-      console.warn("DB lookup failed, falling back to local file:", dbErr);
+      console.warn("Neon DB lookup error:", dbErr);
     }
   }
 
-  // 2. Fallback to local persistent JSON file
-  const links = await getStoredLinks();
-  const found = links.find(
-    (l) => l.shortCode.toLowerCase() === shortCode.toLowerCase()
+  // Tier 3: Local file fallback
+  const localLinks = await getLocalBackupLinks();
+  const localFound = localLinks.find(
+    (l) => l.shortCode.toLowerCase() === cleanCode.toLowerCase()
   );
-  return found || null;
+
+  if (localFound) {
+    // Populate Redis cache
+    await setCachedLink(localFound);
+    return localFound;
+  }
+
+  return null;
 }
 
 /**
- * Checks if a short code already exists in the database or local storage.
- * (Check Database -> هل موجود؟)
+ * Checks if a short code is already taken across Redis and Database.
  */
 export async function isShortCodeTaken(shortCode: string): Promise<boolean> {
   const existing = await getLinkByShortCode(shortCode);
@@ -80,8 +140,8 @@ export async function isShortCodeTaken(shortCode: string): Promise<boolean> {
 }
 
 /**
- * Generates a unique short code following the verification workflow:
- * Generate Code -> Check Database -> هل موجود؟ -> Yes: Generate Again / No: Save
+ * Generates a unique short code following the workflow:
+ * Generate Code -> Check Database & Redis -> Exists? Yes: Generate Again / No: Save
  */
 export async function generateUniqueShortCode(
   length: number = 6,
@@ -93,11 +153,11 @@ export async function generateUniqueShortCode(
     // 1. Generate Code
     const code = generateShortCode(length);
 
-    // 2. Check Database / Storage
+    // 2. Check Database & Redis
     const exists = await isShortCodeTaken(code);
 
     // 3. هل موجود؟
-    // No -> The code is unique and ready to save
+    // No -> Return unique code to be saved
     if (!exists) {
       return code;
     }
@@ -111,40 +171,24 @@ export async function generateUniqueShortCode(
   );
 }
 
-export async function saveLink(newLink: Link): Promise<Link> {
-  const links = await getStoredLinks();
-  const existingIndex = links.findIndex(
-    (l) => l.shortCode.toLowerCase() === newLink.shortCode.toLowerCase()
-  );
-
-  let updatedLinks: Link[];
-  if (existingIndex >= 0) {
-    updatedLinks = [...links];
-    updatedLinks[existingIndex] = { ...updatedLinks[existingIndex], ...newLink };
-  } else {
-    updatedLinks = [newLink, ...links];
-  }
-
-  try {
-    await fs.writeFile(
-      DATA_FILE_PATH,
-      JSON.stringify(updatedLinks, null, 2),
-      "utf-8"
-    );
-  } catch (e) {
-    console.error("Error saving link to file:", e);
-  }
-
-  // Sync to Neon DB if configured
+/**
+ * Saves a link to Neon PostgreSQL, caches it in Redis, and updates local backup.
+ */
+export async function saveLink(newLink: Link, userId?: string): Promise<Link> {
+  // 1. Persist to Neon PostgreSQL
   if (process.env.DATABASE_URL) {
     try {
-      const { getDb } = await import("@/lib/db/client");
-      const { shortLinks, users } = await import("@/lib/db/schema");
-      const crypto = await import("crypto");
       const db = getDb();
+      let targetUserId = userId;
 
-      const firstUser = await db.query.users.findFirst();
-      if (firstUser) {
+      if (!targetUserId) {
+        const firstUser = await db.query.users.findFirst();
+        if (firstUser) {
+          targetUserId = firstUser.id;
+        }
+      }
+
+      if (targetUserId) {
         const originalUrlHash = crypto
           .createHash("sha256")
           .update(newLink.originalUrl)
@@ -153,38 +197,103 @@ export async function saveLink(newLink: Link): Promise<Link> {
         await db
           .insert(shortLinks)
           .values({
-            userId: firstUser.id,
+            userId: targetUserId,
             originalUrl: newLink.originalUrl,
             originalUrlHash,
             shortCode: newLink.shortCode,
             isActive: newLink.isActive ?? true,
           })
-          .onConflictDoNothing();
+          .onConflictDoUpdate({
+            target: shortLinks.shortCode,
+            set: {
+              originalUrl: newLink.originalUrl,
+              originalUrlHash,
+              isActive: newLink.isActive ?? true,
+              updatedAt: new Date(),
+            },
+          });
       }
     } catch (dbErr) {
-      console.warn("Neon DB sync warning in saveLink:", dbErr);
+      console.warn("Neon DB saveLink warning:", dbErr);
     }
+  }
+
+  // 2. Cache in Redis
+  try {
+    await setCachedLink(newLink);
+  } catch (redisErr) {
+    console.warn("Redis setCachedLink warning:", redisErr);
+  }
+
+  // 3. Keep local backup in sync
+  try {
+    const local = await getLocalBackupLinks();
+    const existingIndex = local.findIndex(
+      (l) => l.shortCode.toLowerCase() === newLink.shortCode.toLowerCase()
+    );
+    let updated: Link[];
+    if (existingIndex >= 0) {
+      updated = [...local];
+      updated[existingIndex] = { ...updated[existingIndex], ...newLink };
+    } else {
+      updated = [newLink, ...local];
+    }
+    await saveLocalBackup(updated);
+  } catch (localErr) {
+    console.warn("Local backup sync warning:", localErr);
   }
 
   return newLink;
 }
 
-export async function recordLinkClick(shortCode: string): Promise<void> {
+/**
+ * Records link clicks atomically in Redis and logs analytics to Neon DB.
+ */
+export async function recordLinkClick(
+  shortCode: string,
+  metadata?: { referrer?: string; ipAddress?: string; userAgent?: string }
+): Promise<void> {
+  if (!shortCode) return;
+
+  // 1. Atomic increment in Redis (Fast path)
   try {
-    const links = await getStoredLinks();
-    const link = links.find(
+    await incrementCachedClicks(shortCode);
+  } catch (redisErr) {
+    console.warn("Redis click increment warning:", redisErr);
+  }
+
+  // 2. Record analytics in Neon PostgreSQL
+  if (process.env.DATABASE_URL) {
+    try {
+      const db = getDb();
+      const found = await db.query.shortLinks.findFirst({
+        where: eq(shortLinks.shortCode, shortCode),
+      });
+
+      if (found) {
+        await db.insert(linkAnalytics).values({
+          linkId: found.id,
+          referrer: metadata?.referrer || null,
+          ipAddress: metadata?.ipAddress || null,
+          userAgent: metadata?.userAgent || null,
+        });
+      }
+    } catch (dbErr) {
+      console.warn("Neon DB recordLinkClick analytics warning:", dbErr);
+    }
+  }
+
+  // 3. Sync click count in local backup
+  try {
+    const local = await getLocalBackupLinks();
+    const link = local.find(
       (l) => l.shortCode.toLowerCase() === shortCode.toLowerCase()
     );
     if (link) {
       link.clicks = (link.clicks || 0) + 1;
-      await fs.writeFile(
-        DATA_FILE_PATH,
-        JSON.stringify(links, null, 2),
-        "utf-8"
-      );
+      await saveLocalBackup(local);
     }
   } catch (e) {
-    console.error("Error recording click:", e);
+    // Ignore local backup click errors
   }
 }
-
