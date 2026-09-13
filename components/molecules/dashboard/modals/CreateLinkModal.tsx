@@ -24,6 +24,7 @@ const CreateLinkModal: React.FC<CreateLinkModalProps> = ({
   isOpen,
   onClose,
 }) => {
+  const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [duplicateLink, setDuplicateLink] = useState<LinkType | null>(null);
   const { links, addLink } = useLinkStore();
@@ -47,6 +48,7 @@ const CreateLinkModal: React.FC<CreateLinkModalProps> = ({
 
     const newLink: LinkType = {
       id: Math.random().toString(36).substring(2, 11),
+      name: name.trim() || undefined,
       originalUrl: cleanUrl,
       shortCode: Math.random().toString(36).substring(2, 8),
       clicks: 0,
@@ -63,6 +65,7 @@ const CreateLinkModal: React.FC<CreateLinkModalProps> = ({
       body: JSON.stringify(newLink),
     }).catch((err) => console.error("Error syncing link to backend:", err));
 
+    setName("");
     setUrl("");
     onClose();
   };
@@ -80,31 +83,54 @@ const CreateLinkModal: React.FC<CreateLinkModalProps> = ({
           <DialogHeader>
             <DialogTitle>Shorten URL</DialogTitle>
             <DialogDescription>
-              Create a new short link to share.
+              Create a new short link to share with custom name and tracking.
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <label
-                htmlFor="url"
-                className="text-sm font-medium text-foreground"
-              >
-                Destination URL
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
-                  <LinkIcon size={16} className="text-muted-foreground" />
-                </div>
+            <div className="space-y-4">
+              {/* Link Name Input */}
+              <div className="space-y-2">
+                <label
+                  htmlFor="name"
+                  className="text-sm font-medium text-foreground flex items-center justify-between"
+                >
+                  <span>Link Name / عنوان الرابط</span>
+                  <span className="text-xs text-muted-foreground font-normal">
+                    Optional / اختياري
+                  </span>
+                </label>
                 <Input
-                  type="url"
-                  id="url"
-                  required
-                  placeholder="https://example.com/long-url"
-                  className="pl-10"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
+                  type="text"
+                  id="name"
+                  placeholder="e.g. My Portfolio, YouTube Video, Campaign..."
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                 />
+              </div>
+
+              {/* Destination URL Input */}
+              <div className="space-y-2">
+                <label
+                  htmlFor="url"
+                  className="text-sm font-medium text-foreground"
+                >
+                  Destination URL / الرابط الأصلي
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+                    <LinkIcon size={16} className="text-muted-foreground" />
+                  </div>
+                  <Input
+                    type="url"
+                    id="url"
+                    required
+                    placeholder="https://example.com/long-url"
+                    className="pl-10"
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
 

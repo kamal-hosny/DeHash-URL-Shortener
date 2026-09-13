@@ -59,6 +59,18 @@ export default function DuplicateLinkModal({
         </DialogHeader>
 
         <div className="space-y-4 my-2">
+          {/* Link Name Display if available */}
+          {link.name && (
+            <div className="px-3 py-2 bg-accent/40 rounded-lg border border-border flex items-center justify-between">
+              <span className="text-xs text-muted-foreground font-medium">
+                اسم الرابط (Link Name):
+              </span>
+              <span className="text-xs font-semibold text-foreground">
+                {link.name}
+              </span>
+            </div>
+          )}
+
           {/* Original URL Display */}
           <div className="p-3 bg-muted/50 rounded-lg border border-border space-y-1">
             <span className="text-xs text-muted-foreground font-medium block">
@@ -129,3 +141,4 @@ export default function DuplicateLinkModal({
     </Dialog>
   );
 }
+

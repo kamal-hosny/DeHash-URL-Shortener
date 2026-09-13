@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 
 export interface Link {
   id: string;
+  name?: string;
   originalUrl: string;
   shortCode: string;
   clicks: number;
@@ -23,6 +24,7 @@ interface LinkState {
 const mockLinks: Link[] = [
   {
     id: "g43eq0",
+    name: "Google Homepage",
     originalUrl: "https://google.com",
     shortCode: "g43eq0",
     clicks: 0,
@@ -31,6 +33,7 @@ const mockLinks: Link[] = [
   },
   {
     id: "1",
+    name: "Next.js Tutorial Guide",
     originalUrl: "https://www.google.com/search?q=nextjs+tutorial",
     shortCode: "nx-tut",
     clicks: 1250,
@@ -39,6 +42,7 @@ const mockLinks: Link[] = [
   },
   {
     id: "2",
+    name: "Shadcn UI Components",
     originalUrl: "https://github.com/shadcn-ui/ui",
     shortCode: "shadcn",
     clicks: 856,
@@ -47,6 +51,7 @@ const mockLinks: Link[] = [
   },
   {
     id: "3",
+    name: "Vercel Postgres Documentation",
     originalUrl: "https://vercel.com/docs/storage/vercel-postgres/quickstart",
     shortCode: "v-pg",
     clicks: 42,

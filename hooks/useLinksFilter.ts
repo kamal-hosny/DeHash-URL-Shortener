@@ -15,7 +15,8 @@ export const useLinksFilter = (links: LinkType[]) => {
       result = result.filter(
         (link) =>
           link.shortCode.toLowerCase().includes(query) ||
-          link.originalUrl.toLowerCase().includes(query)
+          link.originalUrl.toLowerCase().includes(query) ||
+          (link.name && link.name.toLowerCase().includes(query))
       );
     }
 

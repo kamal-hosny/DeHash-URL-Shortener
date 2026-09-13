@@ -116,22 +116,29 @@ export default function LinkAnalyticsPage() {
 
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
           <div>
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl font-bold text-foreground tracking-tight">
-                /{link.shortCode}
-              </h1>
-              <span
-                className={`
-                  inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                  ${
-                    link.isActive
-                      ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400"
-                      : "bg-muted text-muted-foreground"
-                  }
-                `}
-              >
-                {link.isActive ? "Active" : "Archived"}
-              </span>
+            <div className="flex flex-col gap-1 mb-2">
+              <div className="flex items-center gap-3">
+                <h1 className="text-3xl font-bold text-foreground tracking-tight">
+                  {link.name || `/${link.shortCode}`}
+                </h1>
+                <span
+                  className={`
+                    inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                    ${
+                      link.isActive
+                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400"
+                        : "bg-muted text-muted-foreground"
+                    }
+                  `}
+                >
+                  {link.isActive ? "Active" : "Archived"}
+                </span>
+              </div>
+              {link.name && (
+                <span className="text-sm font-mono font-medium text-primary">
+                  /{link.shortCode}
+                </span>
+              )}
             </div>
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-muted-foreground text-sm">
               <div className="flex items-center gap-1.5 max-w-md truncate">

@@ -46,6 +46,7 @@ export async function POST(req: NextRequest) {
 
     const newLink: Link = {
       id: body.id || Math.random().toString(36).substring(2, 11),
+      name: body.name?.trim() || undefined,
       originalUrl: cleanUrl,
       shortCode,
       clicks: body.clicks ?? 0,
