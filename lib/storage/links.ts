@@ -619,3 +619,57 @@ export async function getLinkAnalyticsData(shortCode: string) {
   };
 }
 
+/**
+ * Deletes a link by its ID or shortCode across Neon DB, Redis cache, and Local file backup.
+ */
+export async function deleteStoredLink(idOrCode: string): Promise<boolean> {
+  if (!idOrCode) return false;
+
+  let targetShortCode = idOrCode;
+
+  // 1. Delete from Neon PostgreSQL if connected
+  if (process.env.DATABASE_URL) {
+    try {
+      const db = getDb();
+      const existing = await db.query.shortLinks.findFirst({
+        where: eq(shortLinks.id, idOrCode),
+      });
+
+      if (existing) {
+        targetShortCode = existing.shortCode;
+        await db.delete(shortLinks).where(eq(shortLinks.id, idOrCode));
+      } else {
+        const byCode = await db.query.shortLinks.findFirst({
+          where: eq(shortLinks.shortCode, idOrCode),
+        });
+        if (byCode) {
+          targetShortCode = byCode.shortCode;
+          await db.delete(shortLinks).where(eq(shortLinks.shortCode, idOrCode));
+        }
+      }
+    } catch (err) {
+      console.warn("Neon DB delete link error:", err);
+    }
+  }
+
+  // 2. Invalidate in Redis cache
+  try {
+    await invalidateCachedLink(targetShortCode);
+  } catch (err) {
+    console.warn("Redis cache invalidation error:", err);
+  }
+
+  // 3. Remove from local file backup
+  try {
+    const backup = await getLocalBackupLinks();
+    const updated = backup.filter(
+      (l) => l.id !== idOrCode && l.shortCode.toLowerCase() !== idOrCode.toLowerCase()
+    );
+    await saveLocalBackup(updated);
+  } catch (err) {
+    console.warn("Local backup delete error:", err);
+  }
+
+  return true;
+}
+

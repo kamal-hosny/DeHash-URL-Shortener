@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { normalizeUrl, generateShortCode } from "@/lib/utils";
 import DuplicateLinkModal from "./DuplicateLinkModal";
+import { useCreateLinkMutation } from "@/hooks/queries/useLinksQuery";
 
 export interface CreateLinkModalProps {
   isOpen: boolean;
@@ -27,8 +28,9 @@ export const CreateLinkModal: React.FC<CreateLinkModalProps> = ({
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [duplicateLink, setDuplicateLink] = useState<LinkType | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const { links, addLink } = useLinkStore();
+  const createLinkMutation = useCreateLinkMutation();
+  const isLoading = createLinkMutation.isPending;
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -45,19 +47,11 @@ export const CreateLinkModal: React.FC<CreateLinkModalProps> = ({
       return;
     }
 
-    setIsLoading(true);
-
     try {
-      const res = await fetch("/api/links", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          originalUrl: cleanUrl,
-          name: name.trim() || undefined,
-        }),
+      const data = await createLinkMutation.mutateAsync({
+        originalUrl: cleanUrl,
+        name: name.trim() || undefined,
       });
-
-      const data = await res.json();
 
       if (data.duplicate && data.link) {
         setDuplicateLink(data.link);
@@ -65,7 +59,6 @@ export const CreateLinkModal: React.FC<CreateLinkModalProps> = ({
       }
 
       if (data.success && data.link) {
-        addLink(data.link);
         setName("");
         setUrl("");
         onClose();
@@ -73,8 +66,6 @@ export const CreateLinkModal: React.FC<CreateLinkModalProps> = ({
       }
     } catch (error) {
       console.warn("API link creation failed, using local generation fallback:", error);
-    } finally {
-      setIsLoading(false);
     }
 
     // Client fallback: Generate Code -> Check Store -> هل موجود؟ -> Yes: Generate Again / No: Save

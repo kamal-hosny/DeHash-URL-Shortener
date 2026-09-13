@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useLinkStore } from "@/store/linkStore";
 import {
   MousePointer2,
@@ -13,56 +13,13 @@ import StatCard from "@/components/molecules/dashboard/StatCard";
 import AnalyticsChart from "@/components/ui/AnalyticsChart";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-
-interface AggregateAnalytics {
-  totalLinks: number;
-  activeLinks: number;
-  totalClicks: number;
-  uniqueVisitors: number;
-  topSource: string;
-  topCountry: string;
-  locationData: { label: string; value: number }[];
-  deviceData: { label: string; value: number; color?: string }[];
-  browserData: { label: string; value: number; color?: string }[];
-  referrerData: { label: string; value: number }[];
-  topLinks?: Array<{
-    id: string;
-    name?: string;
-    shortCode: string;
-    originalUrl: string;
-    clicks: number;
-    topCountry?: string;
-    topReferrer?: string;
-    isActive: boolean;
-  }>;
-  recentClicks?: Array<{
-    id: string;
-    clickedAt: string;
-    country?: string | null;
-    city?: string | null;
-    referrer?: string | null;
-    deviceType?: string | null;
-    browser?: string | null;
-    ipAddress?: string | null;
-    shortCode?: string;
-    linkName?: string;
-  }>;
-}
+import { useAggregateAnalyticsQuery } from "@/hooks/queries/useAnalyticsQuery";
+import { usePrefetchLink } from "@/hooks/queries/useLinksQuery";
 
 export default function AnalyticsPage() {
   const { links } = useLinkStore();
-  const [data, setData] = useState<AggregateAnalytics | null>(null);
-
-  useEffect(() => {
-    fetch("/api/analytics")
-      .then((res) => res.json())
-      .then((resData) => {
-        if (resData.success) {
-          setData(resData);
-        }
-      })
-      .catch((err) => console.warn("Failed to fetch aggregate analytics:", err));
-  }, []);
+  const { data } = useAggregateAnalyticsQuery();
+  const prefetchLink = usePrefetchLink();
 
   const totalClicks = data?.totalClicks ?? links.reduce((acc, link) => acc + link.clicks, 0);
   const totalLinks = data?.totalLinks ?? links.length;
@@ -202,7 +159,11 @@ export default function AnalyticsPage() {
               </thead>
               <tbody className="divide-y divide-border/40">
                 {data.topLinks.map((link) => (
-                  <tr key={link.id} className="hover:bg-muted/30 transition-colors">
+                  <tr
+                    key={link.id}
+                    onMouseEnter={() => prefetchLink(link.id)}
+                    className="hover:bg-muted/30 transition-colors"
+                  >
                     <td className="py-3 px-3 whitespace-nowrap">
                       <div className="flex flex-col">
                         <span className="font-semibold text-foreground">
@@ -226,7 +187,11 @@ export default function AnalyticsPage() {
                     </td>
                     <td className="py-3 px-3 text-right whitespace-nowrap">
                       <Button variant="outline" size="sm" asChild className="h-8 text-xs gap-1">
-                        <Link href={`/dashboard/links/${link.id}`}>
+                        <Link
+                          href={`/dashboard/links/${link.id}`}
+                          onMouseEnter={() => prefetchLink(link.id)}
+                          onFocus={() => prefetchLink(link.id)}
+                        >
                           Inspect <ArrowRight size={12} />
                         </Link>
                       </Button>

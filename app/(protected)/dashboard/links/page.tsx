@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useLinkStore } from "@/store/linkStore";
+import { useLinksQuery } from "@/hooks/queries/useLinksQuery";
 import { Plus } from "@/assets/icons";
 import { Button } from "@/components/ui/button";
 import CreateLinkModal from "@/components/molecules/dashboard/modals/CreateLinkModal";
@@ -10,7 +11,9 @@ import LinksToolbar from "@/components/molecules/dashboard/LinksToolbar";
 import LinksTable from "@/components/molecules/dashboard/LinksTable";
 
 export default function LinksPage() {
-  const { links } = useLinkStore();
+  const { links: localLinks } = useLinkStore();
+  const { data: serverLinks } = useLinksQuery();
+  const links = serverLinks || localLinks;
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const {

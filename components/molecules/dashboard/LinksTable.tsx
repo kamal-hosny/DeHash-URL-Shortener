@@ -32,7 +32,7 @@ const LinksTable = ({
   showEmptyState = false,
   onClearFilters,
 }: LinksTableProps) => {
-  const { copyToClipboard, navigateToAnalytics, deleteLink } = useLinkActions();
+  const { copyToClipboard, navigateToAnalytics, deleteLink, prefetchLink } = useLinkActions();
   const [selectedLinkForQr, setSelectedLinkForQr] = useState<LinkType | null>(
     null
   );
@@ -68,6 +68,7 @@ const LinksTable = ({
               links.map((link) => (
                 <tr
                   key={link.id}
+                  onMouseEnter={() => prefetchLink(link.id)}
                   className="group hover:bg-accent/50 transition-colors"
                 >
                   <td className="px-6 py-4">
@@ -79,6 +80,8 @@ const LinksTable = ({
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => navigateToAnalytics(link.id)}
+                            onMouseEnter={() => prefetchLink(link.id)}
+                            onFocus={() => prefetchLink(link.id)}
                             className="font-semibold text-foreground hover:underline hover:text-primary transition-colors text-left truncate max-w-[220px]"
                             title={link.name || `/${link.shortCode}`}
                           >
@@ -171,6 +174,8 @@ const LinksTable = ({
                           className="p-2"
                           title="Analytics"
                           onClick={() => navigateToAnalytics(link.id)}
+                          onMouseEnter={() => prefetchLink(link.id)}
+                          onFocus={() => prefetchLink(link.id)}
                         >
                           <BarChart2 size={16} />
                         </Button>
@@ -220,6 +225,8 @@ const LinksTable = ({
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => navigateToAnalytics(link.id)}
+                              onMouseEnter={() => prefetchLink(link.id)}
+                              onFocus={() => prefetchLink(link.id)}
                             >
                               <BarChart2 className="mr-2 h-4 w-4" /> Analytics
                             </DropdownMenuItem>

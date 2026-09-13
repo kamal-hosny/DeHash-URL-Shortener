@@ -13,7 +13,7 @@
     "name": "vchbgfdg",
     "originalUrl": "http://ixof.com/",
     "shortCode": "EKeaOz",
-    "clicks": 1,
+    "clicks": 2,
     "isActive": true,
     "createdAt": "2026-09-13T21:47:13.641Z"
   },
@@ -34,31 +34,6 @@
     "clicks": 1,
     "isActive": true,
     "createdAt": "2026-09-13T17:44:55.309Z"
-  },
-  {
-    "id": "g9nj8sbna",
-    "name": "ixon",
-    "originalUrl": "http://ixon.com/",
-    "shortCode": "4rtxf5",
-    "clicks": 2,
-    "isActive": true,
-    "createdAt": "2026-09-13T17:31:01.181Z"
-  },
-  {
-    "id": "1",
-    "originalUrl": "https://www.google.com/search?q=nextjs+tutorial",
-    "shortCode": "nx-tut",
-    "clicks": 1250,
-    "isActive": true,
-    "createdAt": "2026-09-11T17:31:01.438Z"
-  },
-  {
-    "id": "2",
-    "originalUrl": "https://github.com/shadcn-ui/ui",
-    "shortCode": "shadcn",
-    "clicks": 856,
-    "isActive": true,
-    "createdAt": "2026-09-08T17:31:01.438Z"
   },
   {
     "id": "3",

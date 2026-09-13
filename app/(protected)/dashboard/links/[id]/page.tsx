@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useLinkStore, Link as LinkType } from "@/store/linkStore";
+import { useLinkStore } from "@/store/linkStore";
+import { useLinkAnalyticsQuery } from "@/hooks/queries/useAnalyticsQuery";
 import {
   MousePointer2,
   Users,
@@ -19,27 +20,6 @@ import LinkQrCard from "@/components/molecules/dashboard/LinkQrCard";
 import { useToast } from "@/hooks/useToast";
 import Link from "@/components/ui/Link";
 
-interface RecentClickEvent {
-  id: string;
-  clickedAt: string;
-  country?: string | null;
-  city?: string | null;
-  referrer?: string | null;
-  deviceType?: string | null;
-  browser?: string | null;
-  ipAddress?: string | null;
-}
-
-interface RealAnalytics {
-  totalClicks: number;
-  uniqueVisitors: number;
-  deviceData: { label: string; value: number; color?: string }[];
-  browserData: { label: string; value: number; color?: string }[];
-  locationData: { label: string; value: number }[];
-  referrerData: { label: string; value: number }[];
-  recentClicks: RecentClickEvent[];
-}
-
 export default function LinkAnalyticsPage() {
   const params = useParams();
   const router = useRouter();
@@ -47,42 +27,23 @@ export default function LinkAnalyticsPage() {
   const { toast } = useToast();
   const linkId = params.id as string;
 
-  const [fetchedLink, setFetchedLink] = useState<LinkType | null>(null);
-  const [analytics, setAnalytics] = useState<RealAnalytics | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: queryData, isLoading } = useLinkAnalyticsQuery(linkId);
 
   const link = useMemo(
-    () => links.find((l) => l.id === linkId || l.shortCode === linkId) || fetchedLink,
-    [links, linkId, fetchedLink]
+    () => links.find((l) => l.id === linkId || l.shortCode === linkId) || queryData?.link,
+    [links, linkId, queryData?.link]
   );
 
-  // Fetch real-time analytics and link details from backend
+  const analytics = queryData?.analytics || null;
+
+  // Keep local store clicks synchronized with real-time analytics
   useEffect(() => {
-    let isMounted = true;
-
-    fetch(`/api/links/${linkId}/analytics`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (!isMounted) return;
-        if (data.success) {
-          if (data.link) {
-            setFetchedLink(data.link);
-            updateLink(data.link.id, { clicks: data.analytics?.totalClicks ?? data.link.clicks });
-          }
-          if (data.analytics) {
-            setAnalytics(data.analytics);
-          }
-        }
-      })
-      .catch((err) => console.warn("Error fetching analytics:", err))
-      .finally(() => {
-        if (isMounted) setIsLoading(false);
+    if (queryData?.link && queryData?.analytics) {
+      updateLink(queryData.link.id, {
+        clicks: queryData.analytics.totalClicks ?? queryData.link.clicks,
       });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [linkId, updateLink]);
+    }
+  }, [queryData, updateLink]);
 
   if (!link && !isLoading) {
     return (

@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Link2,
   MousePointer2,
   Users,
-  Activity,
   Plus,
   ArrowRight,
   Globe,
@@ -14,60 +13,23 @@ import StatCard from "@/components/molecules/dashboard/StatCard";
 import LinkList from "@/components/molecules/dashboard/LinkList";
 import CreateLinkModal from "@/components/molecules/dashboard/modals/CreateLinkModal";
 import { useLinkStore } from "@/store/linkStore";
+import { useLinksQuery } from "@/hooks/queries/useLinksQuery";
+import { useAggregateAnalyticsQuery } from "@/hooks/queries/useAnalyticsQuery";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
-interface DashboardAnalytics {
-  totalLinks: number;
-  activeLinks: number;
-  totalClicks: number;
-  uniqueVisitors: number;
-  topSource: string;
-  topCountry: string;
-  topLinks?: Array<{
-    id: string;
-    name?: string;
-    shortCode: string;
-    originalUrl: string;
-    clicks: number;
-    topCountry?: string;
-    topReferrer?: string;
-    isActive: boolean;
-  }>;
-}
-
 const DashboardPage = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const { links, setLinks } = useLinkStore();
-  const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null);
+  const { data: serverLinks } = useLinksQuery();
+  const { data: analytics } = useAggregateAnalyticsQuery();
+  const { links: localLinks } = useLinkStore();
 
-  // Sync real-time analytics from backend & Redis
-  useEffect(() => {
-    fetch("/api/analytics")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setAnalytics(data);
-        }
-      })
-      .catch((err) => console.warn("Failed to load dashboard analytics:", err));
-
-    // Also fetch fresh links
-    fetch("/api/links")
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setLinks(data);
-        }
-      })
-      .catch((err) => console.warn("Failed to sync links on dashboard:", err));
-  }, [setLinks]);
+  const links = serverLinks || localLinks;
 
   // Fallback to local store calculations
   const localClicks = links.reduce((acc, link) => acc + link.clicks, 0);
   const totalLinks = analytics?.totalLinks ?? links.length;
   const totalClicks = analytics?.totalClicks ?? localClicks;
-  const activeLinks = analytics?.activeLinks ?? links.filter((l) => l.isActive).length;
   const uniqueVisitors = analytics?.uniqueVisitors ?? Math.floor(totalClicks * 0.85);
   const topSource = analytics?.topSource || "Direct";
 

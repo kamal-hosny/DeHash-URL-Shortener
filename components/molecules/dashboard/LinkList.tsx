@@ -1,4 +1,5 @@
 import { useLinkStore, Link as LinkType } from "@/store/linkStore";
+import { useLinksQuery } from "@/hooks/queries/useLinksQuery";
 import {
   Copy,
   ExternalLink,
@@ -14,10 +15,12 @@ import CreateQrModal from "./modals/CreateQrModal";
 import { useLinkActions } from "@/hooks/useLinkActions";
 
 const LinkList = () => {
-  const { links } = useLinkStore();
-  const { copyToClipboard, navigateToAnalytics, deleteLink } = useLinkActions();
+  const { links: localLinks } = useLinkStore();
+  const { data: serverLinks } = useLinksQuery();
+  const { copyToClipboard, navigateToAnalytics, deleteLink, prefetchLink } = useLinkActions();
   const [selectedLink, setSelectedLink] = useState<LinkType | null>(null);
 
+  const links = serverLinks || localLinks;
   // Get only the 5 most recent links
   const recentLinks = links.slice(0, 5);
 
@@ -67,6 +70,7 @@ const LinkList = () => {
             {recentLinks.map((link) => (
               <tr
                 key={link.id}
+                onMouseEnter={() => prefetchLink(link.id)}
                 className="group hover:bg-accent/50 transition-colors"
               >
                 <td className="px-6 py-4">
@@ -81,6 +85,8 @@ const LinkList = () => {
                         </span>
                         <button
                           onClick={() => navigateToAnalytics(link.id)}
+                          onMouseEnter={() => prefetchLink(link.id)}
+                          onFocus={() => prefetchLink(link.id)}
                           className="font-semibold text-foreground hover:underline hover:text-primary transition-colors text-left truncate max-w-[220px]"
                           title={link.name || `/${link.shortCode}`}
                         >
@@ -168,6 +174,9 @@ const LinkList = () => {
                       size="icon-sm"
                       className="p-2"
                       onClick={() => navigateToAnalytics(link.id)}
+                      onMouseEnter={() => prefetchLink(link.id)}
+                      onFocus={() => prefetchLink(link.id)}
+                      title="View Analytics"
                     >
                       <BarChart2 size={16} />
                     </Button>
