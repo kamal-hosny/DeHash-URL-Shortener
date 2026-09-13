@@ -1,6 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 import { Link } from "@/store/linkStore";
+import { generateShortCode } from "@/lib/utils";
 
 const DATA_FILE_PATH = path.join(process.cwd(), "data", "links.json");
 
@@ -67,6 +68,47 @@ export async function getLinkByShortCode(
   return found || null;
 }
 
+/**
+ * Checks if a short code already exists in the database or local storage.
+ * (Check Database -> هل موجود؟)
+ */
+export async function isShortCodeTaken(shortCode: string): Promise<boolean> {
+  const existing = await getLinkByShortCode(shortCode);
+  return Boolean(existing);
+}
+
+/**
+ * Generates a unique short code following the verification workflow:
+ * Generate Code -> Check Database -> هل موجود؟ -> Yes: Generate Again / No: Save
+ */
+export async function generateUniqueShortCode(
+  length: number = 6,
+  maxAttempts: number = 10
+): Promise<string> {
+  let attempts = 0;
+
+  while (attempts < maxAttempts) {
+    // 1. Generate Code
+    const code = generateShortCode(length);
+
+    // 2. Check Database / Storage
+    const exists = await isShortCodeTaken(code);
+
+    // 3. هل موجود؟
+    // No -> The code is unique and ready to save
+    if (!exists) {
+      return code;
+    }
+
+    // Yes -> Loop and Generate Again
+    attempts++;
+  }
+
+  throw new Error(
+    "Failed to generate a unique short code after multiple attempts. Please try again."
+  );
+}
+
 export async function saveLink(newLink: Link): Promise<Link> {
   const links = await getStoredLinks();
   const existingIndex = links.findIndex(
@@ -89,6 +131,37 @@ export async function saveLink(newLink: Link): Promise<Link> {
     );
   } catch (e) {
     console.error("Error saving link to file:", e);
+  }
+
+  // Sync to Neon DB if configured
+  if (process.env.DATABASE_URL) {
+    try {
+      const { getDb } = await import("@/lib/db/client");
+      const { shortLinks, users } = await import("@/lib/db/schema");
+      const crypto = await import("crypto");
+      const db = getDb();
+
+      const firstUser = await db.query.users.findFirst();
+      if (firstUser) {
+        const originalUrlHash = crypto
+          .createHash("sha256")
+          .update(newLink.originalUrl)
+          .digest("hex");
+
+        await db
+          .insert(shortLinks)
+          .values({
+            userId: firstUser.id,
+            originalUrl: newLink.originalUrl,
+            originalUrlHash,
+            shortCode: newLink.shortCode,
+            isActive: newLink.isActive ?? true,
+          })
+          .onConflictDoNothing();
+      }
+    } catch (dbErr) {
+      console.warn("Neon DB sync warning in saveLink:", dbErr);
+    }
   }
 
   return newLink;

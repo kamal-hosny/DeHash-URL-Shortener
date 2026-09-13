@@ -1,5 +1,14 @@
 [
   {
+    "id": "wqcz7p3x4",
+    "name": "Collision",
+    "originalUrl": "https://www.google.com/search?q=Collision&rlz=1C1GCEA_enEG1227EG1227&oq=Collision&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIHCAEQABiABDIHCAIQABiABDIHCAMQABiABDIHCAQQABiABDIHCAUQABiABDIHCAYQABiABDIHCAcQABiABDIHCAgQABiABDIHCAkQABiABNIBBzM4MmowajeoAgCwAgA&sourceid=chrome&source=chrome.ob&ie=UTF-8&safe=active",
+    "shortCode": "yVDLS7",
+    "clicks": 0,
+    "isActive": true,
+    "createdAt": "2026-09-13T18:36:19.142Z"
+  },
+  {
     "id": "bccuyodgc",
     "name": "yuji",
     "originalUrl": "https://www.pinterest.com/pin/19069998419063131/",
@@ -16,5 +25,29 @@
     "clicks": 1,
     "isActive": true,
     "createdAt": "2026-09-13T17:31:01.181Z"
+  },
+  {
+    "id": "1",
+    "originalUrl": "https://www.google.com/search?q=nextjs+tutorial",
+    "shortCode": "nx-tut",
+    "clicks": 1250,
+    "isActive": true,
+    "createdAt": "2026-09-11T17:31:01.438Z"
+  },
+  {
+    "id": "2",
+    "originalUrl": "https://github.com/shadcn-ui/ui",
+    "shortCode": "shadcn",
+    "clicks": 856,
+    "isActive": true,
+    "createdAt": "2026-09-08T17:31:01.438Z"
+  },
+  {
+    "id": "3",
+    "originalUrl": "https://vercel.com/docs/storage/vercel-postgres/quickstart",
+    "shortCode": "v-pg",
+    "clicks": 42,
+    "isActive": false,
+    "createdAt": "2026-09-03T17:31:01.438Z"
   }
 ]

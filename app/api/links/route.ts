@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getStoredLinks, saveLink } from "@/lib/storage/links";
+import {
+  getStoredLinks,
+  saveLink,
+  generateUniqueShortCode,
+  isShortCodeTaken,
+} from "@/lib/storage/links";
 import { Link } from "@/store/linkStore";
 import { normalizeUrl } from "@/lib/utils";
 
@@ -41,8 +46,19 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const shortCode =
-      body.shortCode || Math.random().toString(36).substring(2, 8);
+    // Generate Code -> Check Database -> هل موجود؟ -> Yes: Generate Again / No: Save
+    let shortCode = body.shortCode?.trim();
+    if (!shortCode) {
+      shortCode = await generateUniqueShortCode();
+    } else {
+      const isTaken = await isShortCodeTaken(shortCode);
+      if (isTaken) {
+        return NextResponse.json(
+          { error: "This short code is already in use." },
+          { status: 409 }
+        );
+      }
+    }
 
     const newLink: Link = {
       id: body.id || Math.random().toString(36).substring(2, 11),

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { normalizeUrl } from "@/lib/utils";
+import { normalizeUrl, generateShortCode } from "@/lib/utils";
 import DuplicateLinkModal from "./DuplicateLinkModal";
 
 export interface CreateLinkModalProps {
@@ -27,12 +27,13 @@ export const CreateLinkModal: React.FC<CreateLinkModalProps> = ({
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [duplicateLink, setDuplicateLink] = useState<LinkType | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const { links, addLink } = useLinkStore();
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const cleanUrl = url.trim();
-    if (!cleanUrl) return;
+    if (!cleanUrl || isLoading) return;
 
     const normalizedInput = normalizeUrl(cleanUrl);
     const existingLink = links.find(
@@ -44,24 +45,60 @@ export const CreateLinkModal: React.FC<CreateLinkModalProps> = ({
       return;
     }
 
-    const newLink: LinkType = {
+    setIsLoading(true);
+
+    try {
+      const res = await fetch("/api/links", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          originalUrl: cleanUrl,
+          name: name.trim() || undefined,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.duplicate && data.link) {
+        setDuplicateLink(data.link);
+        return;
+      }
+
+      if (data.success && data.link) {
+        addLink(data.link);
+        setName("");
+        setUrl("");
+        onClose();
+        return;
+      }
+    } catch (error) {
+      console.warn("API link creation failed, using local generation fallback:", error);
+    } finally {
+      setIsLoading(false);
+    }
+
+    // Client fallback: Generate Code -> Check Store -> هل موجود؟ -> Yes: Generate Again / No: Save
+    let fallbackCode = generateShortCode();
+    let attempts = 0;
+    while (
+      links.some((l) => l.shortCode.toLowerCase() === fallbackCode.toLowerCase()) &&
+      attempts < 10
+    ) {
+      fallbackCode = generateShortCode();
+      attempts++;
+    }
+
+    const fallbackLink: LinkType = {
       id: Math.random().toString(36).substring(2, 11),
       name: name.trim() || undefined,
       originalUrl: cleanUrl,
-      shortCode: Math.random().toString(36).substring(2, 8),
+      shortCode: fallbackCode,
       clicks: 0,
       isActive: true,
       createdAt: new Date().toISOString(),
     };
 
-    addLink(newLink);
-
-    fetch("/api/links", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newLink),
-    }).catch((error) => console.error("Error syncing link to backend:", error));
-
+    addLink(fallbackLink);
     setName("");
     setUrl("");
     onClose();
@@ -125,9 +162,14 @@ export const CreateLinkModal: React.FC<CreateLinkModalProps> = ({
               </div>
             </div>
 
-            <Button type="submit" className="w-full" size="lg">
-              <Sparkles />
-              Create Short Link
+            <Button
+              type="submit"
+              className="w-full"
+              size="lg"
+              disabled={isLoading}
+            >
+              <Sparkles className={isLoading ? "animate-spin" : ""} />
+              {isLoading ? "Creating Short Link..." : "Create Short Link"}
             </Button>
           </form>
         </DialogContent>
