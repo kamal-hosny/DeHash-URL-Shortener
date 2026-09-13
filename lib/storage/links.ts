@@ -19,6 +19,11 @@ import { shortLinks, users, linkAnalytics } from "@/lib/db/schema";
 
 const DATA_FILE_PATH = path.join(process.cwd(), "data", "links.json");
 
+export function isValidUUID(id?: string | null): boolean {
+  if (!id) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+}
+
 // Helper to safely get local file backup links
 async function getLocalBackupLinks(): Promise<Link[]> {
   try {
@@ -57,11 +62,11 @@ export async function getStoredLinks(userId?: string): Promise<Link[]> {
           });
           if (!exists) {
             let targetUserId = userId;
-            if (!targetUserId) {
+            if (!targetUserId || !isValidUUID(targetUserId)) {
               const firstUser = await db.query.users.findFirst();
               targetUserId = firstUser?.id;
             }
-            if (targetUserId) {
+            if (targetUserId && isValidUUID(targetUserId)) {
               const originalUrlHash = crypto
                 .createHash("sha256")
                 .update(local.originalUrl)
@@ -84,15 +89,25 @@ export async function getStoredLinks(userId?: string): Promise<Link[]> {
         }
       }
 
-      // 2. Fetch rows from Neon PostgreSQL
-      const rows = userId
+      // 2. Fetch rows from Neon PostgreSQL safely
+      let targetUserId = userId;
+      if (targetUserId && !isValidUUID(targetUserId)) {
+        const userFound = await db.query.users.findFirst({
+          where: eq(users.email, targetUserId.toLowerCase().trim()),
+        });
+        targetUserId = userFound?.id;
+      }
+
+      const rows = targetUserId && isValidUUID(targetUserId)
         ? await db.query.shortLinks.findMany({
-            where: eq(shortLinks.userId, userId),
+            where: eq(shortLinks.userId, targetUserId),
             orderBy: [desc(shortLinks.createdAt)],
           })
-        : await db.query.shortLinks.findMany({
+        : !userId
+        ? await db.query.shortLinks.findMany({
             orderBy: [desc(shortLinks.createdAt)],
-          });
+          })
+        : [];
 
       if (rows && rows.length > 0) {
         const linksWithClicks = await Promise.all(
@@ -238,8 +253,7 @@ export async function getLinkByIdOrShortCode(identifier: string): Promise<Link |
   if (process.env.DATABASE_URL) {
     try {
       const db = getDb();
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(clean);
-      if (isUuid) {
+      if (isValidUUID(clean)) {
         const found = await db.query.shortLinks.findFirst({
           where: eq(shortLinks.id, clean),
         });
@@ -316,14 +330,21 @@ export async function saveLink(newLink: Link, userId?: string): Promise<Link> {
       const db = getDb();
       let targetUserId = userId;
 
-      if (!targetUserId) {
+      if (targetUserId && !isValidUUID(targetUserId)) {
+        const userFound = await db.query.users.findFirst({
+          where: eq(users.email, targetUserId.toLowerCase().trim()),
+        });
+        targetUserId = userFound?.id;
+      }
+
+      if (!targetUserId || !isValidUUID(targetUserId)) {
         const firstUser = await db.query.users.findFirst();
         if (firstUser) {
           targetUserId = firstUser.id;
         }
       }
 
-      if (targetUserId) {
+      if (targetUserId && isValidUUID(targetUserId)) {
         const originalUrlHash = crypto
           .createHash("sha256")
           .update(newLink.originalUrl)
@@ -631,9 +652,12 @@ export async function deleteStoredLink(idOrCode: string): Promise<boolean> {
   if (process.env.DATABASE_URL) {
     try {
       const db = getDb();
-      const existing = await db.query.shortLinks.findFirst({
-        where: eq(shortLinks.id, idOrCode),
-      });
+      let existing = null;
+      if (isValidUUID(idOrCode)) {
+        existing = await db.query.shortLinks.findFirst({
+          where: eq(shortLinks.id, idOrCode),
+        });
+      }
 
       if (existing) {
         targetShortCode = existing.shortCode;

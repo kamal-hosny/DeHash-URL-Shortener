@@ -6,6 +6,11 @@ import GoogleProvider from "next-auth/providers/google";
 import { login } from "./_actions/auth";
 import { Pages, Routes, Environments } from "@/constants/enums";
 import { User, UserRole } from "@/types";
+import { getDb } from "@/lib/db/client";
+import { users } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 declare module "next-auth" {
   interface Session extends DefaultSession {
@@ -27,6 +32,11 @@ declare module "next-auth/jwt" {
   }
 }
 
+function isValidUUID(id?: string | null): boolean {
+  if (!id) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+}
+
 export const authOptions: NextAuthOptions = {
   callbacks: {
     session: ({ session, token }) => {
@@ -40,17 +50,63 @@ export const authOptions: NextAuthOptions = {
       }
       return session;
     },
-    jwt: async ({ token, user }) => {
+    jwt: async ({ token, user, account }) => {
       if (user) {
         const userData = user as User;
         token.id = userData.id;
         token.name = userData.name || "";
         token.email = userData.email || "";
         token.role = userData.role || (userData.isAdmin ? "ADMIN" : "USER");
-        token.subscriptionPlan = userData.subscriptionPlan;
-        token.isAdmin = userData.isAdmin;
+        token.subscriptionPlan = userData.subscriptionPlan || "FREE";
+        token.isAdmin = userData.isAdmin || false;
         token.image = undefined;
       }
+
+      // If token.id is not a valid UUID (e.g. OAuth provider ID like Google's "106446765328083223021")
+      // or if signing in with an OAuth provider, resolve or sync the user in Neon DB so token.id is a valid UUID.
+      if (token.email && (!isValidUUID(token.id) || (account && account.provider !== "credentials"))) {
+        try {
+          const db = getDb();
+          const normalizedEmail = token.email.toLowerCase().trim();
+
+          let dbUser = await db.query.users.findFirst({
+            where: eq(users.email, normalizedEmail),
+          });
+
+          if (!dbUser) {
+            const randomPassword = await bcrypt.hash(crypto.randomUUID(), 10);
+            const [newUser] = await db
+              .insert(users)
+              .values({
+                name: token.name || normalizedEmail.split("@")[0] || "User",
+                email: normalizedEmail,
+                password: randomPassword,
+                subscriptionPlan: "FREE",
+                isAdmin: false,
+              })
+              .returning();
+            dbUser = newUser;
+          } else {
+            // Update last activity
+            await db
+              .update(users)
+              .set({ lastActivity: new Date() })
+              .where(eq(users.id, dbUser.id));
+          }
+
+          if (dbUser) {
+            token.id = dbUser.id;
+            token.name = dbUser.name;
+            token.email = dbUser.email;
+            token.subscriptionPlan = (dbUser.subscriptionPlan as "FREE" | "PRO") || "FREE";
+            token.isAdmin = dbUser.isAdmin ?? false;
+            token.role = dbUser.isAdmin ? "ADMIN" : "USER";
+          }
+        } catch (err) {
+          console.error("Neon DB OAuth sync error:", err);
+        }
+      }
+
       return token;
     },
   },
