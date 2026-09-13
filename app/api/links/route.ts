@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStoredLinks, saveLink } from "@/lib/storage/links";
 import { Link } from "@/store/linkStore";
+import { normalizeUrl } from "@/lib/utils";
 
 export async function GET() {
   try {
@@ -23,12 +24,29 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const cleanUrl = body.originalUrl.trim();
+    const normalizedInput = normalizeUrl(cleanUrl);
+
+    // Check for existing link with identical original URL
+    const existingLinks = await getStoredLinks();
+    const existing = existingLinks.find(
+      (l) => normalizeUrl(l.originalUrl) === normalizedInput
+    );
+
+    if (existing) {
+      return NextResponse.json({
+        success: true,
+        duplicate: true,
+        link: existing,
+      });
+    }
+
     const shortCode =
       body.shortCode || Math.random().toString(36).substring(2, 8);
 
     const newLink: Link = {
       id: body.id || Math.random().toString(36).substring(2, 11),
-      originalUrl: body.originalUrl,
+      originalUrl: cleanUrl,
       shortCode,
       clicks: body.clicks ?? 0,
       isActive: body.isActive ?? true,
@@ -46,4 +64,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-
