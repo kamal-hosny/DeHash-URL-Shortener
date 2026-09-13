@@ -1,0 +1,50 @@
+[
+  {
+    "id": "742kmqus2",
+    "originalUrl": "https://chatgpt.com/c/6aa5f546-fd1c-83ea-bc64-efec351af21a",
+    "shortCode": "75rhtv",
+    "clicks": 0,
+    "isActive": true,
+    "createdAt": "2026-09-13T01:04:37.526Z"
+  },
+  {
+    "id": "3ipy98qla",
+    "originalUrl": "https://youtu.be/kpUJ9grLOiw?si=CmGCkgLFvdMRDwc4",
+    "shortCode": "fpnn64",
+    "clicks": 1,
+    "isActive": true,
+    "createdAt": "2026-09-12T18:34:37.077Z"
+  },
+  {
+    "id": "g43eq0",
+    "originalUrl": "https://google.com",
+    "shortCode": "g43eq0",
+    "clicks": 51,
+    "isActive": true,
+    "createdAt": "2026-09-12T17:48:26.631Z"
+  },
+  {
+    "id": "1",
+    "originalUrl": "https://www.google.com/search?q=nextjs+tutorial",
+    "shortCode": "nx-tut",
+    "clicks": 1250,
+    "isActive": true,
+    "createdAt": "2026-09-10T17:48:27.060Z"
+  },
+  {
+    "id": "2",
+    "originalUrl": "https://github.com/shadcn-ui/ui",
+    "shortCode": "shadcn",
+    "clicks": 857,
+    "isActive": true,
+    "createdAt": "2026-09-07T17:48:27.060Z"
+  },
+  {
+    "id": "3",
+    "originalUrl": "https://vercel.com/docs/storage/vercel-postgres/quickstart",
+    "shortCode": "v-pg",
+    "clicks": 42,
+    "isActive": false,
+    "createdAt": "2026-09-02T17:48:27.060Z"
+  }
+]
