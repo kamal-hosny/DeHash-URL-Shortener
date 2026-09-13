@@ -20,50 +20,10 @@ interface LinkState {
   incrementClicks: (shortCode: string) => void;
 }
 
-// Initial mock links
-const mockLinks: Link[] = [
-  {
-    id: "g43eq0",
-    name: "Google Homepage",
-    originalUrl: "https://google.com",
-    shortCode: "g43eq0",
-    clicks: 0,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "1",
-    name: "Next.js Tutorial Guide",
-    originalUrl: "https://www.google.com/search?q=nextjs+tutorial",
-    shortCode: "nx-tut",
-    clicks: 1250,
-    isActive: true,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
-  },
-  {
-    id: "2",
-    name: "Shadcn UI Components",
-    originalUrl: "https://github.com/shadcn-ui/ui",
-    shortCode: "shadcn",
-    clicks: 856,
-    isActive: true,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(),
-  },
-  {
-    id: "3",
-    name: "Vercel Postgres Documentation",
-    originalUrl: "https://vercel.com/docs/storage/vercel-postgres/quickstart",
-    shortCode: "v-pg",
-    clicks: 42,
-    isActive: false,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10).toISOString(),
-  },
-];
-
 export const useLinkStore = create<LinkState>()(
   persist(
     (set) => ({
-      links: mockLinks,
+      links: [],
       addLink: (link) =>
         set((state) => {
           // Avoid duplicate codes

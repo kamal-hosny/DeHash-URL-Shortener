@@ -1,38 +1,20 @@
 [
   {
-    "id": "g43eq0-sample",
-    "name": "Google Homepage",
-    "originalUrl": "https://google.com",
-    "shortCode": "g43eq0",
-    "clicks": 0,
+    "id": "bccuyodgc",
+    "name": "yuji",
+    "originalUrl": "https://www.pinterest.com/pin/19069998419063131/",
+    "shortCode": "bvyzt7",
+    "clicks": 1,
     "isActive": true,
-    "createdAt": "2026-09-12T17:48:00.000Z"
+    "createdAt": "2026-09-13T17:44:55.309Z"
   },
   {
-    "id": "1",
-    "name": "Next.js Tutorial Guide",
-    "originalUrl": "https://www.google.com/search?q=nextjs+tutorial",
-    "shortCode": "nx-tut",
-    "clicks": 1250,
+    "id": "g9nj8sbna",
+    "name": "ixon",
+    "originalUrl": "http://ixon.com/",
+    "shortCode": "4rtxf5",
+    "clicks": 1,
     "isActive": true,
-    "createdAt": "2026-09-10T17:43:49.204Z"
-  },
-  {
-    "id": "2",
-    "name": "Shadcn UI Components",
-    "originalUrl": "https://github.com/shadcn-ui/ui",
-    "shortCode": "shadcn",
-    "clicks": 856,
-    "isActive": true,
-    "createdAt": "2026-09-07T17:43:49.204Z"
-  },
-  {
-    "id": "3",
-    "name": "Vercel Postgres Documentation",
-    "originalUrl": "https://vercel.com/docs/storage/vercel-postgres/quickstart",
-    "shortCode": "v-pg",
-    "clicks": 42,
-    "isActive": false,
-    "createdAt": "2026-09-02T17:43:49.204Z"
+    "createdAt": "2026-09-13T17:31:01.181Z"
   }
 ]

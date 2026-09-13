@@ -98,6 +98,14 @@ const LinksTable = ({
                             <Copy size={12} />
                           </Button>
                         </div>
+                        <Link
+                          href={`/r/${link.shortCode}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 mt-0.5"
+                        >
+                          visit link <ExternalLink size={10} />
+                        </Link>
                         <div className="flex items-center gap-2 mt-0.5">
                           {link.name && (
                             <span className="text-xs font-mono text-muted-foreground">

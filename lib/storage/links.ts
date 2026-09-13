@@ -4,32 +4,7 @@ import { Link } from "@/store/linkStore";
 
 const DATA_FILE_PATH = path.join(process.cwd(), "data", "links.json");
 
-const initialLinks: Link[] = [
-  {
-    id: "1",
-    originalUrl: "https://www.google.com/search?q=nextjs+tutorial",
-    shortCode: "nx-tut",
-    clicks: 1250,
-    isActive: true,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
-  },
-  {
-    id: "2",
-    originalUrl: "https://github.com/shadcn-ui/ui",
-    shortCode: "shadcn",
-    clicks: 856,
-    isActive: true,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(),
-  },
-  {
-    id: "3",
-    originalUrl: "https://vercel.com/docs/storage/vercel-postgres/quickstart",
-    shortCode: "v-pg",
-    clicks: 42,
-    isActive: false,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10).toISOString(),
-  },
-];
+const initialLinks: Link[] = [];
 
 export async function getStoredLinks(): Promise<Link[]> {
   try {

@@ -76,6 +76,9 @@ const LinkList = () => {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
+                        <span className="font-medium text-foreground">
+                          /{link.shortCode}
+                        </span>
                         <button
                           onClick={() => navigateToAnalytics(link.id)}
                           className="font-semibold text-foreground hover:underline hover:text-primary transition-colors text-left truncate max-w-[220px]"
@@ -91,12 +94,19 @@ const LinkList = () => {
                               `${window.location.origin}/r/${link.shortCode}`
                             )
                           }
-                          className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity h-auto w-auto p-0"
                           title="Copy short link"
                         >
                           <Copy size={12} />
                         </Button>
                       </div>
+                      <Link
+                        href={`/r/${link.shortCode}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 mt-0.5"
+                      >
+                        visit link <ExternalLink size={10} />
+                      </Link>
                       <div className="flex items-center gap-2 mt-0.5">
                         {link.name && (
                           <span className="text-xs font-mono text-muted-foreground">

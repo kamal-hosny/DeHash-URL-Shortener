@@ -15,12 +15,12 @@ import { Button } from "@/components/ui/button";
 import { normalizeUrl } from "@/lib/utils";
 import DuplicateLinkModal from "./DuplicateLinkModal";
 
-interface CreateLinkModalProps {
+export interface CreateLinkModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const CreateLinkModal: React.FC<CreateLinkModalProps> = ({
+export const CreateLinkModal: React.FC<CreateLinkModalProps> = ({
   isOpen,
   onClose,
 }) => {
@@ -29,20 +29,18 @@ const CreateLinkModal: React.FC<CreateLinkModalProps> = ({
   const [duplicateLink, setDuplicateLink] = useState<LinkType | null>(null);
   const { links, addLink } = useLinkStore();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     const cleanUrl = url.trim();
     if (!cleanUrl) return;
 
-    // Check if the exact or normalized URL already exists
     const normalizedInput = normalizeUrl(cleanUrl);
-    const existing = links.find(
-      (l) => normalizeUrl(l.originalUrl) === normalizedInput
+    const existingLink = links.find(
+      (link) => normalizeUrl(link.originalUrl) === normalizedInput
     );
 
-    if (existing) {
-      // Do NOT create duplicate short link. Show duplicate popup dialog!
-      setDuplicateLink(existing);
+    if (existingLink) {
+      setDuplicateLink(existingLink);
       return;
     }
 
@@ -58,12 +56,11 @@ const CreateLinkModal: React.FC<CreateLinkModalProps> = ({
 
     addLink(newLink);
 
-    // Sync to backend persistent store
     fetch("/api/links", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(newLink),
-    }).catch((err) => console.error("Error syncing link to backend:", err));
+    }).catch((error) => console.error("Error syncing link to backend:", error));
 
     setName("");
     setUrl("");
@@ -83,54 +80,48 @@ const CreateLinkModal: React.FC<CreateLinkModalProps> = ({
           <DialogHeader>
             <DialogTitle>Shorten URL</DialogTitle>
             <DialogDescription>
-              Create a new short link to share with custom name and tracking.
+              Create a shareable short link with an optional name for easier tracking.
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-4">
-              {/* Link Name Input */}
-              <div className="space-y-2">
-                <label
-                  htmlFor="name"
-                  className="text-sm font-medium text-foreground flex items-center justify-between"
-                >
-                  <span>Link Name / عنوان الرابط</span>
-                  <span className="text-xs text-muted-foreground font-normal">
-                    Optional / اختياري
-                  </span>
-                </label>
-                <Input
-                  type="text"
-                  id="name"
-                  placeholder="e.g. My Portfolio, YouTube Video, Campaign..."
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-              </div>
+            <div className="space-y-2">
+              <label
+                htmlFor="name"
+                className="text-sm font-medium text-foreground"
+              >
+                Link name <span className="font-normal text-muted-foreground">(optional)</span>
+              </label>
+              <Input
+                type="text"
+                id="name"
+                placeholder="e.g. My Portfolio or YouTube Video"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                maxLength={100}
+              />
+            </div>
 
-              {/* Destination URL Input */}
-              <div className="space-y-2">
-                <label
-                  htmlFor="url"
-                  className="text-sm font-medium text-foreground"
-                >
-                  Destination URL / الرابط الأصلي
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
-                    <LinkIcon size={16} className="text-muted-foreground" />
-                  </div>
-                  <Input
-                    type="url"
-                    id="url"
-                    required
-                    placeholder="https://example.com/long-url"
-                    className="pl-10"
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                  />
+            <div className="space-y-2">
+              <label
+                htmlFor="url"
+                className="text-sm font-medium text-foreground"
+              >
+                Destination URL
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 z-10 flex items-center pl-3 pointer-events-none">
+                  <LinkIcon size={16} className="text-muted-foreground" />
                 </div>
+                <Input
+                  type="url"
+                  id="url"
+                  required
+                  placeholder="https://example.com/long-url"
+                  className="pl-10"
+                  value={url}
+                  onChange={(event) => setUrl(event.target.value)}
+                />
               </div>
             </div>
 
@@ -142,7 +133,6 @@ const CreateLinkModal: React.FC<CreateLinkModalProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* Duplicate Link Detected Popup Dialog */}
       <DuplicateLinkModal
         isOpen={!!duplicateLink}
         link={duplicateLink}

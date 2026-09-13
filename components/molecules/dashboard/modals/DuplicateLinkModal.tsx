@@ -50,20 +50,20 @@ export default function DuplicateLinkModal({
           </div>
           <div>
             <DialogTitle className="text-xl font-bold text-foreground">
-              الرابط تم اختصاره مسبقاً
+              Link Already Shortened
             </DialogTitle>
             <DialogDescription className="mt-1.5 text-muted-foreground text-sm">
-              لقد استخدمت هذا الرابط من قبل! هذا هو الرابط المختصر الخاص به:
+              This destination has already been shortened. You can use the existing short link below.
             </DialogDescription>
           </div>
         </DialogHeader>
 
         <div className="space-y-4 my-2">
-          {/* Link Name Display if available */}
+          {/* Display the link name when available. */}
           {link.name && (
             <div className="px-3 py-2 bg-accent/40 rounded-lg border border-border flex items-center justify-between">
               <span className="text-xs text-muted-foreground font-medium">
-                اسم الرابط (Link Name):
+                Link name
               </span>
               <span className="text-xs font-semibold text-foreground">
                 {link.name}
@@ -71,10 +71,10 @@ export default function DuplicateLinkModal({
             </div>
           )}
 
-          {/* Original URL Display */}
+          {/* Original URL */}
           <div className="p-3 bg-muted/50 rounded-lg border border-border space-y-1">
             <span className="text-xs text-muted-foreground font-medium block">
-              الرابط الأصلي (Original URL):
+              Original URL
             </span>
             <p
               className="text-xs font-mono text-foreground break-all line-clamp-2"
@@ -84,15 +84,15 @@ export default function DuplicateLinkModal({
             </p>
           </div>
 
-          {/* Short Link Display with Copy button */}
+          {/* Short link with copy button */}
           <div className="p-3.5 bg-primary/5 rounded-lg border border-primary/20 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-primary flex items-center gap-1.5">
                 <Link2 size={14} />
-                الرابط المختصر (Short Link):
+                Short link
               </span>
               <span className="text-[11px] text-muted-foreground">
-                كود: <span className="font-mono font-semibold">/{link.shortCode}</span>
+                Code: <span className="font-mono font-semibold">/{link.shortCode}</span>
               </span>
             </div>
 
@@ -106,7 +106,7 @@ export default function DuplicateLinkModal({
                 size="icon-sm"
                 onClick={handleCopy}
                 className="h-8 w-8 shrink-0 hover:bg-muted"
-                title={copied ? "تم النسخ" : "نسخ الرابط"}
+                title={copied ? "Copied" : "Copy link"}
               >
                 {copied ? (
                   <Check size={16} className="text-emerald-500" />
@@ -125,7 +125,7 @@ export default function DuplicateLinkModal({
             onClick={onClose}
             className="w-full sm:w-auto"
           >
-            إلغاء
+            Cancel
           </Button>
 
           <Button
@@ -134,7 +134,7 @@ export default function DuplicateLinkModal({
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2"
           >
             <ExternalLink size={16} />
-            اذهب إلى الرابط
+            Open link
           </Button>
         </DialogFooter>
       </DialogContent>
