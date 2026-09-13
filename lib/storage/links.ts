@@ -1,7 +1,9 @@
+//  Storage Layer
 import fs from "fs/promises";
 import path from "path";
 import { Link } from "@/store/linkStore";
-import { generateShortCode } from "@/lib/utils";
+import { generateShortCode } from "@/utils/generateShortCode";
+
 
 const DATA_FILE_PATH = path.join(process.cwd(), "data", "links.json");
 
