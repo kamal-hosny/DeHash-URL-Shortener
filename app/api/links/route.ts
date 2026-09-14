@@ -5,6 +5,7 @@ import {
   generateUniqueShortCode,
   isShortCodeTaken,
 } from "@/lib/storage/links";
+import { checkCanCreateLink } from "@/lib/storage/billing";
 import { Link } from "@/store/linkStore";
 import { normalizeUrl } from "@/lib/utils";
 
@@ -25,6 +26,19 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?.id;
+    const userEmail = session?.user?.email;
+
+    // Check quota before allowing link creation
+    const quotaCheck = await checkCanCreateLink(userId, userEmail);
+    if (!quotaCheck.allowed) {
+      return NextResponse.json(
+        { error: quotaCheck.reason, quotaExceeded: true },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
 
     if (!body.originalUrl) {
@@ -38,7 +52,7 @@ export async function POST(req: NextRequest) {
     const normalizedInput = normalizeUrl(cleanUrl);
 
     // Check for existing link with identical original URL
-    const existingLinks = await getStoredLinks();
+    const existingLinks = await getStoredLinks(userId);
     const existing = existingLinks.find(
       (l) => normalizeUrl(l.originalUrl) === normalizedInput
     );
@@ -75,8 +89,6 @@ export async function POST(req: NextRequest) {
       createdAt: body.createdAt || new Date().toISOString(),
     };
 
-    const session = await getServerSession(authOptions);
-    const userId = session?.user?.id;
     const saved = await saveLink(newLink, userId);
 
     return NextResponse.json({ success: true, link: saved });

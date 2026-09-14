@@ -47,6 +47,11 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role;
         session.user.subscriptionPlan = token.subscriptionPlan;
         session.user.isAdmin = token.isAdmin;
+
+        if (token.email && (token.email.toLowerCase() === "ixonhosny@gmail.com" || process.env.ADMIN_EMAIL?.toLowerCase() === token.email.toLowerCase())) {
+          session.user.isAdmin = true;
+          session.user.role = "ADMIN";
+        }
       }
       return session;
     },
@@ -60,6 +65,11 @@ export const authOptions: NextAuthOptions = {
         token.subscriptionPlan = userData.subscriptionPlan || "FREE";
         token.isAdmin = userData.isAdmin || false;
         token.image = undefined;
+      }
+
+      if (token.email && (token.email.toLowerCase() === "ixonhosny@gmail.com" || process.env.ADMIN_EMAIL?.toLowerCase() === token.email.toLowerCase())) {
+        token.isAdmin = true;
+        token.role = "ADMIN";
       }
 
       // If token.id is not a valid UUID (e.g. OAuth provider ID like Google's "106446765328083223021")

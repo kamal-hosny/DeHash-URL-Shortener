@@ -9,8 +9,8 @@ import { X } from "@/assets/icons";
 import { NavbarLogo } from "../molecules/navbar/NavbarLogo";
 import Link from "../ui/Link";
 import UserProfile from "../molecules/sidebar/UserProfile";
-import { signOut } from "next-auth/react";
-import { useAuthDispatch } from "@/store/authStore";
+import { signOut, useSession } from "next-auth/react";
+import { useAuthDispatch, useAuthUser } from "@/store/authStore";
 import { Button } from "@/components/ui/button";
 
 interface SidebarProps {
@@ -21,6 +21,17 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const pathname = usePathname();
   const dispatch = useAuthDispatch();
+  const authUser = useAuthUser();
+  const { data: session } = useSession();
+
+  const isAdmin = Boolean(
+    session?.user?.isAdmin ||
+    session?.user?.role === "ADMIN" ||
+    session?.user?.email?.toLowerCase() === "ixonhosny@gmail.com" ||
+    authUser?.isAdmin ||
+    authUser?.role === "ADMIN" ||
+    authUser?.email?.toLowerCase() === "ixonhosny@gmail.com"
+  );
   const handleSignOut = useCallback(async () => {
     try {
       await signOut({ callbackUrl: "/signin" });
@@ -66,7 +77,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
           {/* Navigation */}
           <div className="flex-1 overflow-y-auto py-6 px-3 space-y-1">
-            {SIDEBAR_ITEMS.map((item) => {
+            {SIDEBAR_ITEMS.filter((item) => !(item as { adminOnly?: boolean }).adminOnly || isAdmin).map((item) => {
               const isActive = pathname === item.href;
               return (
                 <Link

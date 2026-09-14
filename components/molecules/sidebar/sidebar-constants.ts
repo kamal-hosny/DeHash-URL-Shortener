@@ -1,4 +1,4 @@
-import { LayoutDashboard, Link2, BarChart3, Activity, Settings, CreditCard, LogOut } from 'lucide-react';
+import { LayoutDashboard, Link2, BarChart3, Activity, Settings, CreditCard, Sparkles, LogOut } from 'lucide-react';
 
 export const SIDEBAR_ITEMS = [
     {
@@ -25,6 +25,12 @@ export const SIDEBAR_ITEMS = [
         label: 'Billing',
         icon: CreditCard,
         href: '/dashboard/billing',
+    },
+    {
+        label: 'Discount Codes',
+        icon: Sparkles,
+        href: '/dashboard/billing/coupons',
+        adminOnly: true,
     },
     {
         label: 'Settings',
