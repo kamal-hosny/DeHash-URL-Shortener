@@ -6,7 +6,7 @@ export default function Features() {
   const stats = [
     {
       title: "Easy",
-      subtitle: "ShortURL is easy and fast, enter the long link to get your shortened link",
+      subtitle: "DeHash is easy and fast, enter any long link to get your shortened link instantly",
       icon: Zap,
       gradient: "from-blue-500/20 to-cyan-500/20",
       iconColor: "text-blue-500",
@@ -14,7 +14,7 @@ export default function Features() {
     },
     {
       title: "Shortened",
-      subtitle: "Use any link, no matter what size, ShortURL always shortens",
+      subtitle: "Use any link, no matter how long, DeHash simplifies and shortens it with ease",
       icon: Layers,
       gradient: "from-purple-500/20 to-pink-500/20",
       iconColor: "text-purple-500",
@@ -30,7 +30,7 @@ export default function Features() {
     },
     {
       title: "Statistics",
-      subtitle: "Check the number of clicks that your shortened URL received",
+      subtitle: "Check the number of clicks, geographic locations, and devices that your shortened URL received",
       icon: BarChart3,
       gradient: "from-orange-500/20 to-red-500/20",
       iconColor: "text-orange-500",
@@ -38,7 +38,7 @@ export default function Features() {
     },
     {
       title: "Reliable",
-      subtitle: "All links that try to disseminate spam, viruses and malware are deleted",
+      subtitle: "All links that try to disseminate spam, viruses and malware are automatically blocked",
       icon: Lock,
       gradient: "from-indigo-500/20 to-purple-500/20",
       iconColor: "text-indigo-500",
@@ -46,7 +46,7 @@ export default function Features() {
     },
     {
       title: "Devices",
-      subtitle: "Compatible with smartphones, tablets and desktop",
+      subtitle: "Compatible with smartphones, tablets and desktop browsers seamlessly",
       icon: Smartphone,
       gradient: "from-pink-500/20 to-rose-500/20",
       iconColor: "text-pink-500",
@@ -58,11 +58,11 @@ export default function Features() {
     <section className="py-12 sm:py-14 md:py-16 px-4">
       {/* Main Title */}
       <div className="text-center mb-8 sm:mb-10 md:mb-12 space-y-2 sm:space-y-3">
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70 px-4">
-          Why Choose ShortURL?
-        </h1>
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70 px-4">
+          Why Choose DeHash?
+        </h2>
         <p className="text-foreground/60 mt-2 text-sm sm:text-base md:text-lg max-w-2xl mx-auto px-4">
-          A powerful URL shortener designed to make your links simple, secure, and trackable.
+          A powerful URL shortener and QR code studio designed to make your links simple, secure, and trackable.
         </p>
       </div>
 
@@ -120,9 +120,9 @@ export default function Features() {
 
               {/* Content */}
               <div className="relative space-y-1.5 sm:space-y-2">
-                <h2 className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight">
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight">
                   {item.title}
-                </h2>
+                </h3>
                 <p className="text-xs sm:text-sm md:text-base text-foreground/70 leading-relaxed">
                   {item.subtitle}
                 </p>

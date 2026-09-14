@@ -87,27 +87,35 @@ export default function Hero() {
             {/* Title */}
             <div className="space-y-2 sm:space-y-3 max-w-xl px-2">
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                Create a QR Code
+                {activeTab === "link" ? "Shorten a Long URL" : "Create a QR Code"}
               </h2>
 
               <p className="text-muted-foreground text-sm sm:text-base md:text-lg leading-relaxed">
-                No credit card required. Get started in seconds.
+                {activeTab === "link"
+                  ? "Instant, secure short links with real-time visitor analytics."
+                  : "Scan-ready dynamic QR codes. No credit card required."}
               </p>
             </div>
 
             {/* Input + Button */}
             <div className="w-full max-w-xl space-y-4 sm:space-y-6 px-2">
-              <Label htmlFor="qr-url" className="block space-y-2 sm:space-y-3">
+              <Label htmlFor="hero-destination-url" className="block space-y-2 sm:space-y-3">
                 <span className="font-semibold block text-base sm:text-lg">
-                  Enter your QR Code destination
+                  {activeTab === "link"
+                    ? "Enter your long link to shorten"
+                    : "Enter your QR Code destination"}
                 </span>
 
                 <Input
-                  id="qr-url"
+                  id="hero-destination-url"
                   type="url"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  placeholder="https://example.com/my-long-url"
+                  placeholder={
+                    activeTab === "link"
+                      ? "https://example.com/very-long-url-to-shorten"
+                      : "https://example.com/my-qr-destination"
+                  }
                   className="w-full px-4 sm:px-5 py-3 sm:py-4 rounded-xl sm:rounded-2xl text-sm sm:text-base bg-background/60 backdrop-blur-sm"
                 />
               </Label>
@@ -117,10 +125,17 @@ export default function Hero() {
                 className="w-full py-4 sm:py-5 px-6 sm:px-8 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.02] sm:hover:scale-[1.03] group text-sm sm:text-base"
               >
                 <Zap className="w-4 h-4 sm:w-5 sm:h-5 group-hover:rotate-12 transition-transform duration-300" />
-                <span className="hidden sm:inline">
-                  Get your QR Code for free
-                </span>
-                <span className="sm:hidden">Get QR Code</span>
+                {activeTab === "link" ? (
+                  <>
+                    <span className="hidden sm:inline">Shorten URL for free</span>
+                    <span className="sm:hidden">Shorten URL</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="hidden sm:inline">Get your QR Code for free</span>
+                    <span className="sm:hidden">Get QR Code</span>
+                  </>
+                )}
                 <svg
                   className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform duration-300"
                   fill="none"
