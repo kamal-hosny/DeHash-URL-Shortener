@@ -12,10 +12,10 @@
     "plan": "PRO",
     "status": "active",
     "billingCycle": "yearly",
-    "cycleStartDate": "2026-09-14T18:10:46.734Z",
-    "cycleEndDate": "2026-10-14T18:10:46.734Z",
-    "allocatedQuota": 3000,
+    "cycleStartDate": "2026-09-14T18:44:11.125Z",
+    "cycleEndDate": "2026-10-14T18:44:11.125Z",
+    "allocatedQuota": 2000,
     "priorLinksCount": 0,
-    "updatedAt": "2026-09-14T18:13:06.133Z"
+    "updatedAt": "2026-09-14T18:44:11.125Z"
   }
 ]
