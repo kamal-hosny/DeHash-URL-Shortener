@@ -56,6 +56,28 @@ export async function invalidateCachedLink(shortCode: string): Promise<void> {
 }
 
 /**
+ * Completely purges a link and all its counters/analytics from Redis.
+ */
+export async function purgeCachedLink(shortCode: string): Promise<void> {
+  if (!shortCode) return;
+  const code = shortCode.toLowerCase();
+  try {
+    const pipeline = redis.pipeline();
+    pipeline.del(`${LINK_PREFIX}${code}`);
+    pipeline.del(`${CLICKS_PREFIX}${code}`);
+    pipeline.del(`analytics:${code}:ips`);
+    pipeline.del(`analytics:${code}:countries`);
+    pipeline.del(`analytics:${code}:cities`);
+    pipeline.del(`analytics:${code}:devices`);
+    pipeline.del(`analytics:${code}:browsers`);
+    pipeline.del(`analytics:${code}:referrers`);
+    await pipeline.exec();
+  } catch (error) {
+    console.warn("Redis purgeCachedLink warning:", error);
+  }
+}
+
+/**
  * Atomically increments clicks in Redis and syncs cached link clicks.
  */
 export async function incrementCachedClicks(shortCode: string): Promise<number> {

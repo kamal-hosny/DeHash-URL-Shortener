@@ -13,6 +13,7 @@ export const queryKeys = {
   analytics: {
     all: ["analytics"] as const,
     aggregate: () => [...queryKeys.analytics.all, "aggregate"] as const,
+    logs: (params?: Record<string, unknown>) => [...queryKeys.analytics.all, "logs", params || {}] as const,
   },
 } as const;
 

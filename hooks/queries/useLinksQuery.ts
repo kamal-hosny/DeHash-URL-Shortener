@@ -72,7 +72,9 @@ export function useDeleteLinkMutation() {
       // Remove from query cache
       queryClient.setQueryData<Link[]>(queryKeys.links.lists(), (old) => {
         if (!old) return [];
-        return old.filter((l) => l.id !== id);
+        return old.filter(
+          (l) => l.id !== id && l.shortCode.toLowerCase() !== id.toLowerCase()
+        );
       });
 
       // Remove from Zustand store

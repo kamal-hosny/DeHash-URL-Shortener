@@ -29,6 +29,7 @@ export interface ClickItem {
   ipAddress?: string | null;
   shortCode?: string;
   linkName?: string;
+  originalUrl?: string;
 }
 
 export interface ChartDatum {
@@ -80,6 +81,21 @@ export interface AggregateAnalyticsResponse {
   referrerData: ChartDatum[];
   topLinks?: TopLinkItem[];
   recentClicks?: ClickItem[];
+  error?: string;
+}
+
+export interface VisitorLogsParams {
+  limit?: number;
+  offset?: number;
+  shortCode?: string;
+  search?: string;
+}
+
+export interface VisitorLogsResponse {
+  success: boolean;
+  logs: ClickItem[];
+  total: number;
+  links?: Array<{ id: string; shortCode: string; name?: string }>;
   error?: string;
 }
 

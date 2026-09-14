@@ -8,6 +8,7 @@ import {
   getCachedLink,
   setCachedLink,
   invalidateCachedLink,
+  purgeCachedLink,
   incrementCachedClicks,
   getCachedClicks,
   recordAnalyticsInRedis,
@@ -109,7 +110,11 @@ export async function getStoredLinks(userId?: string): Promise<Link[]> {
           })
         : [];
 
-      if (rows && rows.length > 0) {
+      if (rows) {
+        if (rows.length === 0) {
+          return [];
+        }
+
         const linksWithClicks = await Promise.all(
           rows.map(async (r) => {
             const cachedClicks = await getCachedClicks(r.shortCode);
@@ -645,50 +650,85 @@ export async function getLinkAnalyticsData(shortCode: string) {
  */
 export async function deleteStoredLink(idOrCode: string): Promise<boolean> {
   if (!idOrCode) return false;
+  const cleanIdOrCode = idOrCode.trim();
 
-  let targetShortCode = idOrCode;
+  let targetShortCode: string | null = null;
+  let targetDbId: string | null = null;
+  let targetLocalId: string | null = null;
 
-  // 1. Delete from Neon PostgreSQL if connected
+  // Step 1: Check local backup to resolve localId and shortCode
+  const localBackup = await getLocalBackupLinks();
+  const localMatch = localBackup.find(
+    (l) => l.id === cleanIdOrCode || l.shortCode.toLowerCase() === cleanIdOrCode.toLowerCase()
+  );
+  if (localMatch) {
+    targetLocalId = localMatch.id;
+    targetShortCode = localMatch.shortCode;
+  }
+
+  // Step 2: Check Neon DB and delete if present
   if (process.env.DATABASE_URL) {
     try {
       const db = getDb();
-      let existing = null;
-      if (isValidUUID(idOrCode)) {
-        existing = await db.query.shortLinks.findFirst({
-          where: eq(shortLinks.id, idOrCode),
+      let dbMatch = null;
+
+      if (isValidUUID(cleanIdOrCode)) {
+        dbMatch = await db.query.shortLinks.findFirst({
+          where: eq(shortLinks.id, cleanIdOrCode),
         });
       }
 
-      if (existing) {
-        targetShortCode = existing.shortCode;
-        await db.delete(shortLinks).where(eq(shortLinks.id, idOrCode));
-      } else {
-        const byCode = await db.query.shortLinks.findFirst({
-          where: eq(shortLinks.shortCode, idOrCode),
+      if (!dbMatch && targetShortCode) {
+        dbMatch = await db.query.shortLinks.findFirst({
+          where: eq(shortLinks.shortCode, targetShortCode),
         });
-        if (byCode) {
-          targetShortCode = byCode.shortCode;
-          await db.delete(shortLinks).where(eq(shortLinks.shortCode, idOrCode));
+      }
+
+      if (!dbMatch) {
+        dbMatch = await db.query.shortLinks.findFirst({
+          where: eq(shortLinks.shortCode, cleanIdOrCode),
+        });
+      }
+
+      if (dbMatch) {
+        targetDbId = dbMatch.id;
+        targetShortCode = dbMatch.shortCode;
+
+        // Delete associated analytics from DB first
+        try {
+          await db.delete(linkAnalytics).where(eq(linkAnalytics.linkId, dbMatch.id));
+        } catch (analyticsErr) {
+          console.warn("Neon DB delete linkAnalytics warning:", analyticsErr);
         }
+
+        // Delete short link from DB
+        await db.delete(shortLinks).where(eq(shortLinks.id, dbMatch.id));
       }
     } catch (err) {
       console.warn("Neon DB delete link error:", err);
     }
   }
 
-  // 2. Invalidate in Redis cache
+  const finalShortCode = targetShortCode || cleanIdOrCode;
+
+  // Step 3: Purge from Redis cache
   try {
-    await invalidateCachedLink(targetShortCode);
+    await purgeCachedLink(finalShortCode);
   } catch (err) {
-    console.warn("Redis cache invalidation error:", err);
+    console.warn("Redis purge error:", err);
   }
 
-  // 3. Remove from local file backup
+  // Step 4: Delete from local file backup permanently
   try {
     const backup = await getLocalBackupLinks();
-    const updated = backup.filter(
-      (l) => l.id !== idOrCode && l.shortCode.toLowerCase() !== idOrCode.toLowerCase()
-    );
+    const updated = backup.filter((l) => {
+      if (l.id === cleanIdOrCode) return false;
+      if (targetLocalId && l.id === targetLocalId) return false;
+      if (targetDbId && l.id === targetDbId) return false;
+      if (l.shortCode.toLowerCase() === cleanIdOrCode.toLowerCase()) return false;
+      if (finalShortCode && l.shortCode.toLowerCase() === finalShortCode.toLowerCase()) return false;
+      return true;
+    });
     await saveLocalBackup(updated);
   } catch (err) {
     console.warn("Local backup delete error:", err);

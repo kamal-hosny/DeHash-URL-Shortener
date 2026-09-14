@@ -51,7 +51,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Generate Code -> Check Database -> هل موجود؟ -> Yes: Generate Again / No: Save
     // Generate Code -> Check Database -> Exists? -> Yes: Generate Again / No: Save
     let shortCode = body.shortCode?.trim();
     if (!shortCode) {

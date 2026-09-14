@@ -206,7 +206,7 @@ export default function AnalyticsPage() {
 
       {/* Global Recent Visitors Stream */}
       <div className="bg-card border border-border/80 rounded-xl p-6 shadow-sm space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold text-foreground tracking-tight">
               Live Visitor Activity Stream
@@ -215,59 +215,81 @@ export default function AnalyticsPage() {
               Real-time feed of recent visits across all active short links
             </p>
           </div>
-          {data?.recentClicks && data.recentClicks.length > 0 && (
-            <span className="text-xs font-mono font-medium px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-              ● Streaming Live
-            </span>
-          )}
+          <div className="flex items-center gap-2.5">
+            {data?.recentClicks && data.recentClicks.length > 0 && (
+              <span className="text-xs font-mono font-medium px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Streaming Live
+              </span>
+            )}
+            <Button variant="outline" size="sm" asChild className="h-8 text-xs gap-1.5">
+              <Link href="/dashboard/analytics/logs">
+                View All Logs <ArrowRight size={13} />
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {data?.recentClicks && data.recentClicks.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border/60 bg-muted/20">
-                <tr>
-                  <th className="py-2.5 px-3 rounded-l-md">Time</th>
-                  <th className="py-2.5 px-3">Link</th>
-                  <th className="py-2.5 px-3">Location</th>
-                  <th className="py-2.5 px-3">Platform</th>
-                  <th className="py-2.5 px-3 rounded-r-md">Device</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/40">
-                {data.recentClicks.map((c, i) => (
-                  <tr key={c.id || i} className="hover:bg-muted/30 transition-colors">
-                    <td className="py-2.5 px-3 text-muted-foreground whitespace-nowrap text-xs font-mono">
-                      {new Date(c.clickedAt).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        second: "2-digit",
-                      })}
-                    </td>
-                    <td className="py-2.5 px-3 whitespace-nowrap">
-                      <Link
-                        href={`/r/${c.shortCode}`}
-                        target="_blank"
-                        className="font-mono text-xs text-primary hover:underline font-medium"
-                      >
-                        /{c.shortCode}
-                      </Link>
-                    </td>
-                    <td className="py-2.5 px-3 font-medium text-foreground whitespace-nowrap text-xs">
-                      {c.country || "Unknown"}
-                      {c.city && c.city !== "Unknown" ? ` (${c.city})` : ""}
-                    </td>
-                    <td className="py-2.5 px-3 text-primary font-medium whitespace-nowrap text-xs">
-                      {c.referrer || "Direct"}
-                    </td>
-                    <td className="py-2.5 px-3 text-muted-foreground whitespace-nowrap text-xs">
-                      {c.deviceType || "Desktop"} • {c.browser || "Unknown"}
-                    </td>
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border/60 bg-muted/20">
+                  <tr>
+                    <th className="py-2.5 px-3 rounded-l-md">Time</th>
+                    <th className="py-2.5 px-3">Link</th>
+                    <th className="py-2.5 px-3">Location</th>
+                    <th className="py-2.5 px-3">Platform</th>
+                    <th className="py-2.5 px-3 rounded-r-md">Device</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-border/40">
+                  {data.recentClicks.slice(0, 8).map((c, i) => (
+                    <tr key={c.id || i} className="hover:bg-muted/30 transition-colors">
+                      <td className="py-2.5 px-3 text-muted-foreground whitespace-nowrap text-xs font-mono">
+                        {new Date(c.clickedAt).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          second: "2-digit",
+                        })}
+                      </td>
+                      <td className="py-2.5 px-3 whitespace-nowrap">
+                        <Link
+                          href={`/r/${c.shortCode}`}
+                          target="_blank"
+                          className="font-mono text-xs text-primary hover:underline font-medium"
+                        >
+                          /{c.shortCode}
+                        </Link>
+                      </td>
+                      <td className="py-2.5 px-3 font-medium text-foreground whitespace-nowrap text-xs">
+                        {c.country || "Unknown"}
+                        {c.city && c.city !== "Unknown" ? ` (${c.city})` : ""}
+                      </td>
+                      <td className="py-2.5 px-3 text-primary font-medium whitespace-nowrap text-xs">
+                        {c.referrer || "Direct"}
+                      </td>
+                      <td className="py-2.5 px-3 text-muted-foreground whitespace-nowrap text-xs">
+                        {c.deviceType || "Desktop"} • {c.browser || "Unknown"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="pt-2 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
+              <span>
+                Showing latest {Math.min(data.recentClicks.length, 8)} of {data.recentClicks.length} recent events
+              </span>
+              <Link
+                href="/dashboard/analytics/logs"
+                className="text-primary hover:underline font-medium inline-flex items-center gap-1"
+              >
+                Open Full Activity Logs <ArrowRight size={12} />
+              </Link>
+            </div>
+          </>
         ) : (
           <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground space-y-2">
             <span className="text-3xl">🌐</span>

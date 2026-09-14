@@ -34,7 +34,9 @@ export const useLinkStore = create<LinkState>()(
         }),
       removeLink: (id) =>
         set((state) => ({
-          links: state.links.filter((l) => l.id !== id),
+          links: state.links.filter(
+            (l) => l.id !== id && l.shortCode.toLowerCase() !== id.toLowerCase()
+          ),
         })),
       updateLink: (id, updates) =>
         set((state) => ({
