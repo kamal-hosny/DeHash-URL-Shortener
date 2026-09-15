@@ -254,7 +254,7 @@ Complete folder structure:
 │
 ├── 📁 public/                       # Static files
 │   ├── 📁 images/
-│   │   ├── logo.svg
+│   │   ├── logo.png
 │   │   ├── hero.png
 │   │   └── features/
 │   ├── 📁 icons/

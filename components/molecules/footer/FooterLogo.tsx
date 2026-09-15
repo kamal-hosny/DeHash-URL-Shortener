@@ -1,22 +1,24 @@
 import Image from "next/image";
 import Link from "@/components/ui/Link";
-import { logo } from "@/assets";
+import { logoFull } from "@/assets";
 
 export const FooterLogo = () => {
   return (
     <div className="space-y-5">
-      <Link href="/" className="flex items-center gap-3">
+      <Link
+        href="/"
+        className="inline-flex items-center group select-none transition-opacity hover:opacity-90"
+        aria-label="DeHash Home"
+      >
         <Image
-          src={logo}
-          width={40}
+          src={logoFull}
+          alt="DeHash"
+          width={170}
           height={40}
-          alt="Logo"
-          className="dark:invert"
+          className="h-10 w-auto object-contain transition-transform duration-200 group-hover:scale-[1.02]"
           priority
         />
-        <span className="text-3xl font-bold tracking-tight text-foreground">
-          DeHash
-        </span>
+        <span className="sr-only">DeHash</span>
       </Link>
 
       <p className="text-sm leading-relaxed text-muted-foreground max-w-sm">

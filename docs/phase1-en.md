@@ -262,7 +262,7 @@ project-root/
 │   └── logger.ts               # Logging utility
 │
 ├── public/                      # Static assets
-│   ├── logo.svg
+│   ├── logo.png
 │   ├── favicon.ico
 │   ├── images/
 │   │   ├── hero.png

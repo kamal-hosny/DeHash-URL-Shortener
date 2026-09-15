@@ -1,8 +1,6 @@
 import {
-    DollarSign,
     LayoutDashboard,
     LogOut,
-    Settings,
     type LucideIcon,
 } from "@/assets/icons";
 

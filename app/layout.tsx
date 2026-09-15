@@ -75,7 +75,15 @@ export const metadata: Metadata = {
     creator: "@dehash",
   },
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/logo.png", type: "image/png" },
+      { url: "/favicon.ico", sizes: "any" },
+    ],
+    shortcut: "/logo.png",
+    apple: [
+      { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
+      { url: "/logo.png", type: "image/png" },
+    ],
   },
   manifest: "/manifest.webmanifest",
 };
