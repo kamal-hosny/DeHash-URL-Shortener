@@ -135,3 +135,74 @@ export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
 export const userMonthlyUsageRelations = relations(userMonthlyUsage, ({ one }) => ({
   user: one(users, { fields: [userMonthlyUsage.userId], references: [users.id] }),
 }));
+
+// Coupons Table
+export const coupons = pgTable(
+  "coupons",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    code: varchar("code", { length: 50 }).unique().notNull(),
+    discountPercent: integer("discount_percent").notNull(),
+    description: text("description"),
+    applicableCycle: varchar("applicable_cycle", { length: 20 }).default("all").notNull(),
+    maxUses: integer("max_uses"),
+    usedCount: integer("used_count").default(0).notNull(),
+    expiresAt: timestamp("expires_at"),
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    codeIdx: uniqueIndex("coupon_code_idx").on(table.code),
+  })
+);
+
+// Invoices Table
+export const invoices = pgTable(
+  "invoices",
+  {
+    id: varchar("id", { length: 100 }).primaryKey(),
+    userId: varchar("user_id", { length: 255 }).notNull(),
+    userEmail: varchar("user_email", { length: 255 }),
+    plan: varchar("plan", { length: 50 }).notNull(),
+    amount: integer("amount").notNull(),
+    originalAmount: integer("original_amount").notNull(),
+    discountAmount: integer("discount_amount").default(0).notNull(),
+    couponCode: varchar("coupon_code", { length: 50 }),
+    status: varchar("status", { length: 50 }).default("paid").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index("invoice_user_id_idx").on(table.userId),
+    userEmailIdx: index("invoice_user_email_idx").on(table.userEmail),
+  })
+);
+
+// User Subscriptions Table
+export const userSubscriptions = pgTable(
+  "user_subscriptions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: varchar("user_id", { length: 255 }).unique().notNull(),
+    userEmail: varchar("user_email", { length: 255 }),
+    plan: varchar("plan", { length: 50 }).default("FREE").notNull(),
+    status: varchar("status", { length: 50 }).default("active").notNull(),
+    billingCycle: varchar("billing_cycle", { length: 50 }).default("monthly").notNull(),
+    cycleStartDate: timestamp("cycle_start_date").defaultNow().notNull(),
+    cycleEndDate: timestamp("cycle_end_date").notNull(),
+    allocatedQuota: integer("allocated_quota").default(50).notNull(),
+    priorLinksCount: integer("prior_links_count").default(0).notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: uniqueIndex("sub_user_id_idx").on(table.userId),
+    userEmailIdx: index("sub_user_email_idx").on(table.userEmail),
+  })
+);
+
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
+export type ShortLink = typeof shortLinks.$inferSelect;
+export type LinkAnalytic = typeof linkAnalytics.$inferSelect;
+export type CouponDb = typeof coupons.$inferSelect;
+export type InvoiceDb = typeof invoices.$inferSelect;
+export type UserSubscriptionDb = typeof userSubscriptions.$inferSelect;

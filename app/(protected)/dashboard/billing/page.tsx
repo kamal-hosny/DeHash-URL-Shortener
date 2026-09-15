@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Check,
   CreditCard,
@@ -38,10 +39,11 @@ import { useSession } from "next-auth/react";
 import { useAuthUser } from "@/store/authStore";
 import { AlertTriangle, Clock, Layers, PlusCircle, ShieldCheck } from "lucide-react";
 
-export default function BillingPage() {
+function BillingPageInner() {
   const { toast } = useToast();
   const { data: session } = useSession();
   const authUser = useAuthUser();
+  const searchParams = useSearchParams();
 
   const isAdmin = Boolean(
     session?.user?.isAdmin ||
@@ -63,6 +65,7 @@ export default function BillingPage() {
   const [isTopUpModalOpen, setIsTopUpModalOpen] = useState(false);
   const [selectedCycle, setSelectedCycle] = useState<"monthly" | "yearly">("yearly");
   const [modalCouponInput, setModalCouponInput] = useState("");
+  const [isStripeLoading, setIsStripeLoading] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState<{
     code: string;
     discountPercent: number;
@@ -71,6 +74,57 @@ export default function BillingPage() {
 
   // Quick coupon on the sidebar card
   const [quickCoupon, setQuickCoupon] = useState("");
+
+  // Handle URL Query Params (plan, cycle, success, canceled)
+  useEffect(() => {
+    const planParam = searchParams.get("plan");
+    const cycleParam = searchParams.get("cycle");
+    const successParam = searchParams.get("success");
+    const canceledParam = searchParams.get("canceled");
+    const sessionId = searchParams.get("session_id");
+
+    if (planParam === "pro" || planParam === "enterprise") {
+      if (cycleParam === "monthly" || cycleParam === "yearly") {
+        setSelectedCycle(cycleParam);
+      }
+      setIsUpgradeModalOpen(true);
+    }
+
+    if (successParam === "true") {
+      if (sessionId) {
+        fetch(`/api/billing/stripe/verify?session_id=${encodeURIComponent(sessionId)}`)
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success) {
+              toast({
+                title: "🎉 تم الدفع وتفعيل الاشتراك بنجاح!",
+                description: `تم ترقية حسابك إلى باقة ${data.plan} بنجاح عبر Stripe.`,
+              });
+              refetch();
+            } else {
+              refetch();
+            }
+          })
+          .catch(() => {
+            refetch();
+          });
+      } else {
+        toast({
+          title: "🎉 تم تفعيل الباقة بنجاح!",
+          description: "تم تحديث اشتراكك بنجاح.",
+        });
+        refetch();
+      }
+    }
+
+    if (canceledParam === "true") {
+      toast({
+        title: "تم إلغاء العملية",
+        description: "تم إلغاء عملية الدفع عبر Stripe. يمكنك المحاولة في أي وقت.",
+        variant: "destructive",
+      });
+    }
+  }, [searchParams]);
 
   const subscription = data?.subscription || {
     plan: "FREE",
@@ -161,31 +215,87 @@ export default function BillingPage() {
     }
   };
 
-  // Handle Confirm Upgrade
+  // Handle Confirm Upgrade (Stripe or 100% Free)
   const handleConfirmUpgrade = async () => {
+    // If 100% free upgrade, activate directly without Stripe
+    if (isFreeUpgrade) {
+      try {
+        const res = await upgradeMutation.mutateAsync({
+          plan: "PRO",
+          couponCode: appliedCoupon?.code,
+          billingCycle: selectedCycle,
+        });
+
+        toast({
+          title: "🎉 Plan Activated!",
+          description: res.message,
+        });
+
+        setIsUpgradeModalOpen(false);
+        setAppliedCoupon(null);
+        setModalCouponInput("");
+        refetch();
+      } catch (err: unknown) {
+        const error = err as Error;
+        toast({
+          title: "Upgrade Error",
+          description: error.message || "Could not complete upgrade",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+
+    // Paid upgrade: Redirect to Stripe Checkout!
+    setIsStripeLoading(true);
     try {
-      const res = await upgradeMutation.mutateAsync({
-        plan: "PRO",
-        couponCode: appliedCoupon?.code,
-        billingCycle: selectedCycle,
+      const res = await fetch("/api/billing/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plan: "PRO",
+          billingCycle: selectedCycle,
+          couponCode: appliedCoupon?.code,
+        }),
       });
 
-      toast({
-        title: "🎉 Plan Activated!",
-        description: res.message,
-      });
+      const data = await res.json();
 
-      setIsUpgradeModalOpen(false);
-      setAppliedCoupon(null);
-      setModalCouponInput("");
-      refetch();
+      if (!res.ok) {
+        if (data.needsConfiguration) {
+          toast({
+            title: "Stripe Setup Required",
+            description: data.error,
+            variant: "destructive",
+          });
+          return;
+        }
+        throw new Error(data.error || "Failed to start Stripe checkout");
+      }
+
+      if (data.url) {
+        toast({
+          title: "جاري التحويل إلى Stripe...",
+          description: "يرجى الانتظار، جاري فتح صفحة الدفع الآمنة...",
+        });
+        window.location.href = data.url;
+      } else if (data.isFree) {
+        toast({
+          title: "🎉 Plan Activated!",
+          description: data.message,
+        });
+        setIsUpgradeModalOpen(false);
+        refetch();
+      }
     } catch (err: unknown) {
       const error = err as Error;
       toast({
-        title: "Upgrade Error",
-        description: error.message || "Could not complete upgrade",
+        title: "خطأ في الدفع",
+        description: error.message || "فشل التحويل إلى Stripe",
         variant: "destructive",
       });
+    } finally {
+      setIsStripeLoading(false);
     }
   };
 
@@ -843,21 +953,26 @@ export default function BillingPage() {
             </Button>
             <Button
               onClick={handleConfirmUpgrade}
-              disabled={upgradeMutation.isPending}
-              className={`text-xs gap-1.5 ${
+              disabled={upgradeMutation.isPending || isStripeLoading}
+              className={`text-xs gap-2 ${
                 isFreeUpgrade
                   ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                  : ""
+                  : "bg-[#635BFF] hover:bg-[#534be0] text-white shadow-md font-semibold"
               }`}
             >
-              {upgradeMutation.isPending ? (
-                "Processing..."
+              {upgradeMutation.isPending || isStripeLoading ? (
+                <>
+                  <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  جاري المعالجة...
+                </>
               ) : isFreeUpgrade ? (
                 <>
                   <Zap size={14} /> Activate Free Pro (100% OFF)
                 </>
               ) : (
-                `Complete Upgrade ($${finalPrice.toFixed(2)})`
+                <>
+                  <CreditCard size={14} /> Pay with Stripe (${finalPrice.toFixed(2)})
+                </>
               )}
             </Button>
           </DialogFooter>
@@ -970,5 +1085,20 @@ export default function BillingPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function BillingPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-12 text-center text-muted-foreground flex flex-col items-center justify-center gap-3">
+          <div className="w-8 h-8 border-2 border-primary/40 border-t-primary rounded-full animate-spin" />
+          <p className="text-sm">Loading billing dashboard...</p>
+        </div>
+      }
+    >
+      <BillingPageInner />
+    </Suspense>
   );
 }

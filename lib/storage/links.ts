@@ -1,5 +1,3 @@
-import fs from "fs/promises";
-import path from "path";
 import crypto from "crypto";
 import { eq, desc } from "drizzle-orm";
 import { Link } from "@/store/linkStore";
@@ -18,135 +16,66 @@ import { ClickMetadata } from "@/lib/analytics/tracker";
 import { getDb } from "@/lib/db/client";
 import { shortLinks, users, linkAnalytics } from "@/lib/db/schema";
 
-const DATA_FILE_PATH = path.join(process.cwd(), "data", "links.json");
-
 export function isValidUUID(id?: string | null): boolean {
   if (!id) return false;
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 }
 
-// Helper to safely get local file backup links
-async function getLocalBackupLinks(): Promise<Link[]> {
-  try {
-    const content = await fs.readFile(DATA_FILE_PATH, "utf-8");
-    const parsed = JSON.parse(content);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-// Helper to safely save local file backup
-async function saveLocalBackup(links: Link[]): Promise<void> {
-  try {
-    await fs.writeFile(DATA_FILE_PATH, JSON.stringify(links, null, 2), "utf-8");
-  } catch (e) {
-    console.warn("Local file backup warning:", e);
-  }
-}
-
 /**
- * Retrieves stored links from Neon PostgreSQL and synchronizes legacy links from local backup.
+ * Retrieves stored links from Neon PostgreSQL with real-time clicks from Redis.
  */
 export async function getStoredLinks(userId?: string): Promise<Link[]> {
-  const localBackup = await getLocalBackupLinks();
+  try {
+    const db = getDb();
 
-  if (process.env.DATABASE_URL) {
-    try {
-      const db = getDb();
-
-      // 1. Auto-sync any legacy links from localBackup into Neon DB if not present
-      for (const local of localBackup) {
-        try {
-          const exists = await db.query.shortLinks.findFirst({
-            where: eq(shortLinks.shortCode, local.shortCode),
-          });
-          if (!exists) {
-            let targetUserId = userId;
-            if (!targetUserId || !isValidUUID(targetUserId)) {
-              const firstUser = await db.query.users.findFirst();
-              targetUserId = firstUser?.id;
-            }
-            if (targetUserId && isValidUUID(targetUserId)) {
-              const originalUrlHash = crypto
-                .createHash("sha256")
-                .update(local.originalUrl)
-                .digest("hex");
-              await db
-                .insert(shortLinks)
-                .values({
-                  userId: targetUserId,
-                  originalUrl: local.originalUrl,
-                  originalUrlHash,
-                  shortCode: local.shortCode,
-                  isActive: local.isActive ?? true,
-                  createdAt: new Date(local.createdAt || Date.now()),
-                })
-                .onConflictDoNothing();
-            }
-          }
-        } catch {
-          // Ignore individual sync errors
-        }
-      }
-
-      // 2. Fetch rows from Neon PostgreSQL safely
-      let targetUserId = userId;
-      if (targetUserId && !isValidUUID(targetUserId)) {
-        const userFound = await db.query.users.findFirst({
-          where: eq(users.email, targetUserId.toLowerCase().trim()),
-        });
-        targetUserId = userFound?.id;
-      }
-
-      const rows = targetUserId && isValidUUID(targetUserId)
-        ? await db.query.shortLinks.findMany({
-            where: eq(shortLinks.userId, targetUserId),
-            orderBy: [desc(shortLinks.createdAt)],
-          })
-        : !userId
-        ? await db.query.shortLinks.findMany({
-            orderBy: [desc(shortLinks.createdAt)],
-          })
-        : [];
-
-      if (rows) {
-        if (rows.length === 0) {
-          return [];
-        }
-
-        const linksWithClicks = await Promise.all(
-          rows.map(async (r) => {
-            const cachedClicks = await getCachedClicks(r.shortCode);
-            const localMatch = localBackup.find(
-              (l) => l.shortCode.toLowerCase() === r.shortCode.toLowerCase()
-            );
-            return {
-              id: r.id,
-              name: localMatch?.name,
-              originalUrl: r.originalUrl,
-              shortCode: r.shortCode,
-              clicks: cachedClicks ?? localMatch?.clicks ?? 0,
-              isActive: r.isActive,
-              createdAt: r.createdAt.toISOString(),
-            };
-          })
-        );
-        return linksWithClicks;
-      }
-    } catch (dbErr) {
-      console.warn("Neon DB getStoredLinks warning, using local fallback:", dbErr);
+    let targetUserId = userId;
+    if (targetUserId && !isValidUUID(targetUserId)) {
+      const userFound = await db.query.users.findFirst({
+        where: eq(users.email, targetUserId.toLowerCase().trim()),
+      });
+      targetUserId = userFound?.id;
     }
-  }
 
-  return localBackup;
+    const rows = targetUserId && isValidUUID(targetUserId)
+      ? await db.query.shortLinks.findMany({
+          where: eq(shortLinks.userId, targetUserId),
+          orderBy: [desc(shortLinks.createdAt)],
+        })
+      : !userId
+      ? await db.query.shortLinks.findMany({
+          orderBy: [desc(shortLinks.createdAt)],
+        })
+      : [];
+
+    if (!rows || rows.length === 0) {
+      return [];
+    }
+
+    const linksWithClicks = await Promise.all(
+      rows.map(async (r) => {
+        const cachedClicks = await getCachedClicks(r.shortCode);
+        return {
+          id: r.id,
+          originalUrl: r.originalUrl,
+          shortCode: r.shortCode,
+          clicks: cachedClicks ?? 0,
+          isActive: r.isActive,
+          createdAt: r.createdAt.toISOString(),
+        };
+      })
+    );
+
+    return linksWithClicks;
+  } catch (dbErr) {
+    console.error("Neon DB getStoredLinks error:", dbErr);
+    return [];
+  }
 }
 
 /**
  * Retrieves a link by its short code with multi-tier resolution:
  * 1. Redis Cache (Fast path < 5ms)
  * 2. Neon PostgreSQL (Primary source of truth)
- * 3. Local file backup (Offline fallback & auto-sync to DB/Redis)
  */
 export async function getLinkByShortCode(shortCode: string): Promise<Link | null> {
   if (!shortCode) return null;
@@ -163,78 +92,36 @@ export async function getLinkByShortCode(shortCode: string): Promise<Link | null
   }
 
   // Tier 2: Check Neon PostgreSQL
-  if (process.env.DATABASE_URL) {
-    try {
-      const db = getDb();
-      const found = await db.query.shortLinks.findFirst({
-        where: eq(shortLinks.shortCode, cleanCode),
-      });
+  try {
+    const db = getDb();
+    const found = await db.query.shortLinks.findFirst({
+      where: eq(shortLinks.shortCode, cleanCode),
+    });
 
-      if (found) {
-        const cachedClicks = await getCachedClicks(cleanCode);
-        const link: Link = {
-          id: found.id,
-          originalUrl: found.originalUrl,
-          shortCode: found.shortCode,
-          clicks: cachedClicks ?? 0,
-          isActive: found.isActive,
-          createdAt: found.createdAt.toISOString(),
-        };
+    if (found) {
+      const cachedClicks = await getCachedClicks(cleanCode);
+      const link: Link = {
+        id: found.id,
+        originalUrl: found.originalUrl,
+        shortCode: found.shortCode,
+        clicks: cachedClicks ?? 0,
+        isActive: found.isActive,
+        createdAt: found.createdAt.toISOString(),
+      };
 
-        // Cache in Redis for subsequent requests
-        await setCachedLink(link);
-        return link;
-      }
-    } catch (dbErr) {
-      console.warn("Neon DB lookup error:", dbErr);
+      // Cache in Redis for subsequent ultra-fast requests
+      await setCachedLink(link);
+      return link;
     }
-  }
-
-  // Tier 3: Local file fallback & auto-sync
-  const localLinks = await getLocalBackupLinks();
-  const localFound = localLinks.find(
-    (l) => l.shortCode.toLowerCase() === cleanCode.toLowerCase()
-  );
-
-  if (localFound) {
-    // Populate Redis cache
-    await setCachedLink(localFound);
-
-    // Sync to Neon DB if not present
-    if (process.env.DATABASE_URL) {
-      try {
-        const db = getDb();
-        const firstUser = await db.query.users.findFirst();
-        if (firstUser) {
-          const originalUrlHash = crypto
-            .createHash("sha256")
-            .update(localFound.originalUrl)
-            .digest("hex");
-          await db
-            .insert(shortLinks)
-            .values({
-              userId: firstUser.id,
-              originalUrl: localFound.originalUrl,
-              originalUrlHash,
-              shortCode: localFound.shortCode,
-              isActive: localFound.isActive ?? true,
-              createdAt: new Date(localFound.createdAt || Date.now()),
-            })
-            .onConflictDoNothing();
-        }
-      } catch {
-        // Ignore background sync error
-      }
-    }
-
-    return localFound;
+  } catch (dbErr) {
+    console.error("Neon DB lookup error:", dbErr);
   }
 
   return null;
 }
 
 /**
- * Universal lookup by either shortCode, DB UUID, or local link ID.
+ * Universal lookup by either shortCode or DB UUID.
  */
 export async function getLinkByIdOrShortCode(identifier: string): Promise<Link | null> {
   if (!identifier) return null;
@@ -244,46 +131,34 @@ export async function getLinkByIdOrShortCode(identifier: string): Promise<Link |
   const byCode = await getLinkByShortCode(clean);
   if (byCode) return byCode;
 
-  // 2. Check local backup by ID or shortCode
-  const localBackup = await getLocalBackupLinks();
-  const localMatch = localBackup.find(
-    (l) => l.id === clean || l.shortCode.toLowerCase() === clean.toLowerCase()
-  );
-  if (localMatch) {
-    await setCachedLink(localMatch);
-    return localMatch;
-  }
-
-  // 3. Check DB by UUID id
-  if (process.env.DATABASE_URL) {
+  // 2. Check DB by UUID id
+  if (isValidUUID(clean)) {
     try {
       const db = getDb();
-      if (isValidUUID(clean)) {
-        const found = await db.query.shortLinks.findFirst({
-          where: eq(shortLinks.id, clean),
-        });
-        if (found) {
-          const cachedClicks = await getCachedClicks(found.shortCode);
-          const link: Link = {
-            id: found.id,
-            originalUrl: found.originalUrl,
-            shortCode: found.shortCode,
-            clicks: cachedClicks ?? 0,
-            isActive: found.isActive,
-            createdAt: found.createdAt.toISOString(),
-          };
-          await setCachedLink(link);
-          return link;
-        }
+      const found = await db.query.shortLinks.findFirst({
+        where: eq(shortLinks.id, clean),
+      });
+
+      if (found) {
+        const cachedClicks = await getCachedClicks(found.shortCode);
+        const link: Link = {
+          id: found.id,
+          originalUrl: found.originalUrl,
+          shortCode: found.shortCode,
+          clicks: cachedClicks ?? 0,
+          isActive: found.isActive,
+          createdAt: found.createdAt.toISOString(),
+        };
+        await setCachedLink(link);
+        return link;
       }
-    } catch {
-      // Ignore
+    } catch (err) {
+      console.error("Neon DB find by UUID error:", err);
     }
   }
 
   return null;
 }
-
 
 /**
  * Checks if a short code is already taken across Redis and Database.
@@ -304,19 +179,13 @@ export async function generateUniqueShortCode(
   let attempts = 0;
 
   while (attempts < maxAttempts) {
-    // 1. Generate Code
     const code = generateShortCode(length);
-
-    // 2. Check Database & Redis
     const exists = await isShortCodeTaken(code);
 
-    // 3. Exists?
-    // No -> Return unique code to be saved
     if (!exists) {
       return code;
     }
 
-    // Yes -> Loop and Generate Again
     attempts++;
   }
 
@@ -326,89 +195,74 @@ export async function generateUniqueShortCode(
 }
 
 /**
- * Saves a link to Neon PostgreSQL, caches it in Redis, and updates local backup.
+ * Saves a link to Neon PostgreSQL and caches it in Redis.
  */
 export async function saveLink(newLink: Link, userId?: string): Promise<Link> {
-  // 1. Persist to Neon PostgreSQL
-  if (process.env.DATABASE_URL) {
-    try {
-      const db = getDb();
-      let targetUserId = userId;
+  let targetUserId = userId;
 
-      if (targetUserId && !isValidUUID(targetUserId)) {
-        const userFound = await db.query.users.findFirst({
-          where: eq(users.email, targetUserId.toLowerCase().trim()),
-        });
-        targetUserId = userFound?.id;
+  try {
+    const db = getDb();
+
+    if (targetUserId && !isValidUUID(targetUserId)) {
+      const userFound = await db.query.users.findFirst({
+        where: eq(users.email, targetUserId.toLowerCase().trim()),
+      });
+      targetUserId = userFound?.id;
+    }
+
+    if (!targetUserId || !isValidUUID(targetUserId)) {
+      const firstUser = await db.query.users.findFirst();
+      if (firstUser) {
+        targetUserId = firstUser.id;
       }
+    }
 
-      if (!targetUserId || !isValidUUID(targetUserId)) {
-        const firstUser = await db.query.users.findFirst();
-        if (firstUser) {
-          targetUserId = firstUser.id;
-        }
-      }
+    if (targetUserId && isValidUUID(targetUserId)) {
+      const originalUrlHash = crypto
+        .createHash("sha256")
+        .update(newLink.originalUrl)
+        .digest("hex");
 
-      if (targetUserId && isValidUUID(targetUserId)) {
-        const originalUrlHash = crypto
-          .createHash("sha256")
-          .update(newLink.originalUrl)
-          .digest("hex");
-
-        await db
-          .insert(shortLinks)
-          .values({
-            userId: targetUserId,
+      const inserted = await db
+        .insert(shortLinks)
+        .values({
+          userId: targetUserId,
+          originalUrl: newLink.originalUrl,
+          originalUrlHash,
+          shortCode: newLink.shortCode,
+          isActive: newLink.isActive ?? true,
+        })
+        .onConflictDoUpdate({
+          target: shortLinks.shortCode,
+          set: {
             originalUrl: newLink.originalUrl,
             originalUrlHash,
-            shortCode: newLink.shortCode,
             isActive: newLink.isActive ?? true,
-          })
-          .onConflictDoUpdate({
-            target: shortLinks.shortCode,
-            set: {
-              originalUrl: newLink.originalUrl,
-              originalUrlHash,
-              isActive: newLink.isActive ?? true,
-              updatedAt: new Date(),
-            },
-          });
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
+
+      if (inserted && inserted.length > 0) {
+        newLink.id = inserted[0].id;
       }
-    } catch (dbErr) {
-      console.warn("Neon DB saveLink warning:", dbErr);
     }
+  } catch (dbErr) {
+    console.error("Neon DB saveLink error:", dbErr);
   }
 
-  // 2. Cache in Redis
+  // Cache in Redis
   try {
     await setCachedLink(newLink);
   } catch (redisErr) {
     console.warn("Redis setCachedLink warning:", redisErr);
   }
 
-  // 3. Keep local backup in sync
-  try {
-    const local = await getLocalBackupLinks();
-    const existingIndex = local.findIndex(
-      (l) => l.shortCode.toLowerCase() === newLink.shortCode.toLowerCase()
-    );
-    let updated: Link[];
-    if (existingIndex >= 0) {
-      updated = [...local];
-      updated[existingIndex] = { ...updated[existingIndex], ...newLink };
-    } else {
-      updated = [newLink, ...local];
-    }
-    await saveLocalBackup(updated);
-  } catch (localErr) {
-    console.warn("Local backup sync warning:", localErr);
-  }
-
   return newLink;
 }
 
 /**
- * Records link clicks atomically in Redis and logs analytics to Neon DB.
+ * Records link clicks atomically in Redis and logs analytics event to Neon DB.
  */
 export async function recordLinkClick(
   shortCode: string,
@@ -435,69 +289,27 @@ export async function recordLinkClick(
   }
 
   // 2. Record detailed analytics event in Neon PostgreSQL
-  if (process.env.DATABASE_URL) {
-    try {
-      const db = getDb();
-      let found = await db.query.shortLinks.findFirst({
-        where: eq(shortLinks.shortCode, cleanCode),
-      });
-
-      // If link not yet in Neon DB, auto-create it from local backup or fallback
-      if (!found) {
-        const localBackup = await getLocalBackupLinks();
-        const localMatch = localBackup.find(
-          (l) => l.shortCode.toLowerCase() === cleanCode.toLowerCase()
-        );
-        const firstUser = await db.query.users.findFirst();
-        if (firstUser && localMatch) {
-          const originalUrlHash = crypto
-            .createHash("sha256")
-            .update(localMatch.originalUrl)
-            .digest("hex");
-          const inserted = await db
-            .insert(shortLinks)
-            .values({
-              userId: firstUser.id,
-              originalUrl: localMatch.originalUrl,
-              originalUrlHash,
-              shortCode: localMatch.shortCode,
-              isActive: localMatch.isActive ?? true,
-            })
-            .returning();
-          found = inserted[0];
-        }
-      }
-
-      if (found) {
-        await db.insert(linkAnalytics).values({
-          linkId: found.id,
-          referrer: metadata?.referrer || null,
-          country: metadata?.country || null,
-          city: metadata?.city || null,
-          deviceType: metadata?.deviceType || null,
-          browser: metadata?.browser || null,
-          ipAddress: metadata?.ipAddress || null,
-          userAgent: metadata?.userAgent || null,
-          clickedAt: new Date(),
-        });
-      }
-    } catch (dbErr) {
-      console.warn("Neon DB recordLinkClick analytics warning:", dbErr);
-    }
-  }
-
-  // 3. Sync click count in local backup
   try {
-    const local = await getLocalBackupLinks();
-    const link = local.find(
-      (l) => l.shortCode.toLowerCase() === cleanCode.toLowerCase()
-    );
-    if (link) {
-      link.clicks = (link.clicks || 0) + 1;
-      await saveLocalBackup(local);
+    const db = getDb();
+    const found = await db.query.shortLinks.findFirst({
+      where: eq(shortLinks.shortCode, cleanCode),
+    });
+
+    if (found) {
+      await db.insert(linkAnalytics).values({
+        linkId: found.id,
+        referrer: metadata?.referrer || null,
+        country: metadata?.country || null,
+        city: metadata?.city || null,
+        deviceType: metadata?.deviceType || null,
+        browser: metadata?.browser || null,
+        ipAddress: metadata?.ipAddress || null,
+        userAgent: metadata?.userAgent || null,
+        clickedAt: new Date(),
+      });
     }
-  } catch {
-    // Ignore local backup click errors
+  } catch (dbErr) {
+    console.warn("Neon DB recordLinkClick analytics warning:", dbErr);
   }
 }
 
@@ -524,23 +336,21 @@ export async function getLinkAnalyticsData(shortCode: string) {
     userAgent: string | null;
   }> = [];
 
-  if (process.env.DATABASE_URL) {
-    try {
-      const db = getDb();
-      const link = await db.query.shortLinks.findFirst({
-        where: eq(shortLinks.shortCode, cleanCode),
-      });
+  try {
+    const db = getDb();
+    const link = await db.query.shortLinks.findFirst({
+      where: eq(shortLinks.shortCode, cleanCode),
+    });
 
-      if (link) {
-        dbEvents = await db.query.linkAnalytics.findMany({
-          where: eq(linkAnalytics.linkId, link.id),
-          orderBy: [desc(linkAnalytics.clickedAt)],
-          limit: 100,
-        });
-      }
-    } catch (err) {
-      console.warn("Neon DB getLinkAnalyticsData error:", err);
+    if (link) {
+      dbEvents = await db.query.linkAnalytics.findMany({
+        where: eq(linkAnalytics.linkId, link.id),
+        orderBy: [desc(linkAnalytics.clickedAt)],
+        limit: 100,
+      });
     }
+  } catch (err) {
+    console.warn("Neon DB getLinkAnalyticsData error:", err);
   }
 
   // Compute stats from DB events
@@ -646,7 +456,7 @@ export async function getLinkAnalyticsData(shortCode: string) {
 }
 
 /**
- * Deletes a link by its ID or shortCode across Neon DB, Redis cache, and Local file backup.
+ * Deletes a link by its ID or shortCode across Neon DB and Redis cache.
  */
 export async function deleteStoredLink(idOrCode: string): Promise<boolean> {
   if (!idOrCode) return false;
@@ -654,86 +464,50 @@ export async function deleteStoredLink(idOrCode: string): Promise<boolean> {
 
   let targetShortCode: string | null = null;
   let targetDbId: string | null = null;
-  let targetLocalId: string | null = null;
 
-  // Step 1: Check local backup to resolve localId and shortCode
-  const localBackup = await getLocalBackupLinks();
-  const localMatch = localBackup.find(
-    (l) => l.id === cleanIdOrCode || l.shortCode.toLowerCase() === cleanIdOrCode.toLowerCase()
-  );
-  if (localMatch) {
-    targetLocalId = localMatch.id;
-    targetShortCode = localMatch.shortCode;
-  }
+  try {
+    const db = getDb();
+    let dbMatch = null;
 
-  // Step 2: Check Neon DB and delete if present
-  if (process.env.DATABASE_URL) {
-    try {
-      const db = getDb();
-      let dbMatch = null;
-
-      if (isValidUUID(cleanIdOrCode)) {
-        dbMatch = await db.query.shortLinks.findFirst({
-          where: eq(shortLinks.id, cleanIdOrCode),
-        });
-      }
-
-      if (!dbMatch && targetShortCode) {
-        dbMatch = await db.query.shortLinks.findFirst({
-          where: eq(shortLinks.shortCode, targetShortCode),
-        });
-      }
-
-      if (!dbMatch) {
-        dbMatch = await db.query.shortLinks.findFirst({
-          where: eq(shortLinks.shortCode, cleanIdOrCode),
-        });
-      }
-
-      if (dbMatch) {
-        targetDbId = dbMatch.id;
-        targetShortCode = dbMatch.shortCode;
-
-        // Delete associated analytics from DB first
-        try {
-          await db.delete(linkAnalytics).where(eq(linkAnalytics.linkId, dbMatch.id));
-        } catch (analyticsErr) {
-          console.warn("Neon DB delete linkAnalytics warning:", analyticsErr);
-        }
-
-        // Delete short link from DB
-        await db.delete(shortLinks).where(eq(shortLinks.id, dbMatch.id));
-      }
-    } catch (err) {
-      console.warn("Neon DB delete link error:", err);
+    if (isValidUUID(cleanIdOrCode)) {
+      dbMatch = await db.query.shortLinks.findFirst({
+        where: eq(shortLinks.id, cleanIdOrCode),
+      });
     }
+
+    if (!dbMatch) {
+      dbMatch = await db.query.shortLinks.findFirst({
+        where: eq(shortLinks.shortCode, cleanIdOrCode),
+      });
+    }
+
+    if (dbMatch) {
+      targetDbId = dbMatch.id;
+      targetShortCode = dbMatch.shortCode;
+
+      // Delete associated analytics from DB first
+      try {
+        await db.delete(linkAnalytics).where(eq(linkAnalytics.linkId, dbMatch.id));
+      } catch (analyticsErr) {
+        console.warn("Neon DB delete linkAnalytics warning:", analyticsErr);
+      }
+
+      // Delete short link from DB
+      await db.delete(shortLinks).where(eq(shortLinks.id, dbMatch.id));
+    }
+  } catch (err) {
+    console.error("Neon DB delete link error:", err);
   }
 
   const finalShortCode = targetShortCode || cleanIdOrCode;
 
-  // Step 3: Purge from Redis cache
+  // Purge from Redis cache
   try {
     await purgeCachedLink(finalShortCode);
+    await invalidateCachedLink(finalShortCode);
   } catch (err) {
     console.warn("Redis purge error:", err);
   }
 
-  // Step 4: Delete from local file backup permanently
-  try {
-    const backup = await getLocalBackupLinks();
-    const updated = backup.filter((l) => {
-      if (l.id === cleanIdOrCode) return false;
-      if (targetLocalId && l.id === targetLocalId) return false;
-      if (targetDbId && l.id === targetDbId) return false;
-      if (l.shortCode.toLowerCase() === cleanIdOrCode.toLowerCase()) return false;
-      if (finalShortCode && l.shortCode.toLowerCase() === finalShortCode.toLowerCase()) return false;
-      return true;
-    });
-    await saveLocalBackup(updated);
-  } catch (err) {
-    console.warn("Local backup delete error:", err);
-  }
-
   return true;
 }
-
