@@ -67,4 +67,12 @@ export const STRIPE_PRICES = {
       description: "Unlimited links, team workspaces, custom domains, and SLA",
     },
   },
+  TOPUP: {
+    amount: 500, // in cents ($5.00 USD)
+    currency: "usd",
+    name: "DeHash Link Top-Up (+1,000 Links)",
+    description: "One-time add-on of 1,000 short link points for your active cycle",
+    points: 1000,
+    priceFormatted: "$5.00",
+  },
 };

@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
       success: true,
       message:
         discountPercent === 100
-          ? `🎉 Congratulations! 100% discount applied. Your ${targetPlan} plan (${billingCycle === "yearly" ? "Yearly - 2,000 links/mo" : "Monthly - 1,000 links/mo"}) is now active for FREE!`
+          ? `Congratulations! 100% discount applied. Your ${targetPlan} plan (${billingCycle === "yearly" ? "Yearly - 2,000 links/mo" : "Monthly - 1,000 links/mo"}) is now active for FREE!`
           : `Your subscription to ${targetPlan} (${billingCycle}) has been activated successfully!`,
       plan: targetPlan,
       billingCycle,

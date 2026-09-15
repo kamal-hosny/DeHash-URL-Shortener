@@ -53,18 +53,15 @@ export const AuthRequiredModal: React.FC<AuthRequiredModalProps> = ({
           </div>
 
           <DialogTitle className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2 justify-center sm:justify-start">
-            <span>تسجيل الدخول مطلوب</span>
-            <span className="text-sm font-normal text-muted-foreground">
-              (Sign in Required)
-            </span>
+            <span>Sign In Required</span>
           </DialogTitle>
 
           <DialogDescription className="text-muted-foreground text-sm leading-relaxed">
-            يجب عليك تسجيل الدخول أو إنشاء حساب جديد لتتمكن من الاشتراك في{" "}
+            Please sign in or create an account to subscribe to the{" "}
             <strong className="text-foreground font-semibold">
-              باقة {planName}
+              {planName} Plan
             </strong>{" "}
-            والوصول إلى لوحة إدارة الفواتير والاشتراكات.
+            and access your subscription management dashboard.
           </DialogDescription>
         </DialogHeader>
 
@@ -85,7 +82,7 @@ export const AuthRequiredModal: React.FC<AuthRequiredModalProps> = ({
             onClick={onClose}
             className="w-full sm:w-auto order-3 sm:order-1"
           >
-            إلغاء
+            Cancel
           </Button>
 
           <Button
@@ -94,7 +91,7 @@ export const AuthRequiredModal: React.FC<AuthRequiredModalProps> = ({
             className="w-full sm:w-auto gap-2 border-primary/30 hover:bg-primary/10 order-2"
           >
             <UserPlus className="w-4 h-4 text-primary" />
-            إنشاء حساب
+            Create Account
           </Button>
 
           <Button
@@ -102,7 +99,7 @@ export const AuthRequiredModal: React.FC<AuthRequiredModalProps> = ({
             className="w-full sm:w-auto gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md order-1 sm:order-3"
           >
             <LogIn className="w-4 h-4" />
-            تسجيل الدخول
+            Sign In
           </Button>
         </DialogFooter>
       </DialogContent>

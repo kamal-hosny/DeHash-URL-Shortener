@@ -66,6 +66,7 @@ function BillingPageInner() {
   const [selectedCycle, setSelectedCycle] = useState<"monthly" | "yearly">("yearly");
   const [modalCouponInput, setModalCouponInput] = useState("");
   const [isStripeLoading, setIsStripeLoading] = useState(false);
+  const [isTopUpLoading, setIsTopUpLoading] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState<{
     code: string;
     discountPercent: number;
@@ -96,10 +97,17 @@ function BillingPageInner() {
           .then((res) => res.json())
           .then((data) => {
             if (data.success) {
-              toast({
-                title: "🎉 تم الدفع وتفعيل الاشتراك بنجاح!",
-                description: `تم ترقية حسابك إلى باقة ${data.plan} بنجاح عبر Stripe.`,
-              });
+              if (data.isTopUp) {
+                toast({
+                  title: "Points Topped Up Successfully",
+                  description: data.message || "Successfully added 1,000 links to your active cycle via Stripe.",
+                });
+              } else {
+                toast({
+                  title: "Payment Successful",
+                  description: `Your account has been upgraded to the ${data.plan} plan via Stripe.`,
+                });
+              }
               refetch();
             } else {
               refetch();
@@ -110,8 +118,8 @@ function BillingPageInner() {
           });
       } else {
         toast({
-          title: "🎉 تم تفعيل الباقة بنجاح!",
-          description: "تم تحديث اشتراكك بنجاح.",
+          title: "Plan Activated Successfully",
+          description: "Your subscription has been updated.",
         });
         refetch();
       }
@@ -119,8 +127,8 @@ function BillingPageInner() {
 
     if (canceledParam === "true") {
       toast({
-        title: "تم إلغاء العملية",
-        description: "تم إلغاء عملية الدفع عبر Stripe. يمكنك المحاولة في أي وقت.",
+        title: "Payment Canceled",
+        description: "The Stripe checkout process was canceled. You can try again anytime.",
         variant: "destructive",
       });
     }
@@ -227,7 +235,7 @@ function BillingPageInner() {
         });
 
         toast({
-          title: "🎉 Plan Activated!",
+          title: "Plan Activated!",
           description: res.message,
         });
 
@@ -275,13 +283,13 @@ function BillingPageInner() {
 
       if (data.url) {
         toast({
-          title: "جاري التحويل إلى Stripe...",
-          description: "يرجى الانتظار، جاري فتح صفحة الدفع الآمنة...",
+          title: "Redirecting to Stripe...",
+          description: "Please wait, opening the secure checkout page...",
         });
         window.location.href = data.url;
       } else if (data.isFree) {
         toast({
-          title: "🎉 Plan Activated!",
+          title: "Plan Activated!",
           description: data.message,
         });
         setIsUpgradeModalOpen(false);
@@ -290,8 +298,8 @@ function BillingPageInner() {
     } catch (err: unknown) {
       const error = err as Error;
       toast({
-        title: "خطأ في الدفع",
-        description: error.message || "فشل التحويل إلى Stripe",
+        title: "Payment Error",
+        description: error.message || "Failed to redirect to Stripe",
         variant: "destructive",
       });
     } finally {
@@ -299,23 +307,55 @@ function BillingPageInner() {
     }
   };
 
-  // Handle Confirm Top-Up
+  // Handle Confirm Paid Top-Up via Stripe ($5.00 for +1,000 Links)
   const handleConfirmTopUp = async () => {
+    setIsTopUpLoading(true);
     try {
-      const res = await topUpMutation.mutateAsync(1000);
-      toast({
-        title: "Points Topped Up!",
-        description: res.message,
+      const res = await fetch("/api/billing/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "TOPUP",
+        }),
       });
-      setIsTopUpModalOpen(false);
-      refetch();
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (data.needsConfiguration) {
+          toast({
+            title: "Stripe Setup Required",
+            description: data.error,
+            variant: "destructive",
+          });
+          return;
+        }
+        throw new Error(data.error || "Failed to start Stripe checkout");
+      }
+
+      if (data.url) {
+        toast({
+          title: "Redirecting to Stripe...",
+          description: "Please wait, opening the secure checkout page to top up links...",
+        });
+        window.location.href = data.url;
+      } else if (data.isFree) {
+        toast({
+          title: "Points Topped Up!",
+          description: data.message || "Successfully added 1,000 links to your cycle!",
+        });
+        setIsTopUpModalOpen(false);
+        refetch();
+      }
     } catch (err: unknown) {
       const error = err as Error;
       toast({
-        title: "Top-Up Failed",
-        description: error.message || "Could not add points",
+        title: "Payment Error",
+        description: error.message || "Failed to redirect to Stripe for top-up",
         variant: "destructive",
       });
+    } finally {
+      setIsTopUpLoading(false);
     }
   };
 
@@ -348,7 +388,7 @@ function BillingPageInner() {
       const res = await applyMutation.mutateAsync({ code, redeemDirectly: true });
       if (res.redeemed) {
         toast({
-          title: "🎉 Pro Activated For Free!",
+          title: "Pro Activated For Free!",
           description: res.message,
         });
         setQuickCoupon("");
@@ -488,11 +528,11 @@ function BillingPageInner() {
                 <div className="flex items-center gap-2">
                   {subscription.isCapReached && (
                     <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                      ★ 10,000 Cap Reached
+                      10,000 Cap Reached
                     </span>
                   )}
                   <div className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                    ● Active
+                    Active
                   </div>
                 </div>
               </div>
@@ -550,7 +590,7 @@ function BillingPageInner() {
                 <p className="text-[11px] text-muted-foreground pt-1">
                   {isPro ? (
                     <>
-                      💡 <strong>Zero Penalty Guarantee:</strong> Links created under the Free plan or previous months do NOT consume your current cycle points. Each cycle lasts 30 days. You can top-up additional points anytime up to the 10,000 points ceiling.
+                      <strong>Zero Penalty Guarantee:</strong> Links created under the Free plan or previous months do NOT consume your current cycle points. Each cycle lasts 30 days. You can top-up additional points anytime up to the 10,000 points ceiling.
                     </>
                   ) : (
                     "When you upgrade to Pro, all your existing links are preserved with zero penalty, and you receive a fresh 1,000 or 2,000 link quota."
@@ -576,7 +616,7 @@ function BillingPageInner() {
                       className="text-xs gap-1.5 text-primary border-primary/30 hover:bg-primary/10"
                     >
                       <PlusCircle size={14} />
-                      {subscription.isCapReached ? "10,000 Max Cap" : "Top-Up (+1,000 Links)"}
+                      {subscription.isCapReached ? "10,000 Max Cap" : "Top-Up (+1,000 Links • $5)"}
                     </Button>
                     <Button
                       variant="ghost"
@@ -638,7 +678,7 @@ function BillingPageInner() {
                             })}
                           </td>
                           <td className="py-3 px-3 font-medium text-foreground whitespace-nowrap">
-                            {inv.plan} Plan
+                            {inv.plan === "TOPUP" ? "Top-Up (+1,000 Links)" : `${inv.plan} Plan`}
                           </td>
                           <td className="py-3 px-3 whitespace-nowrap">
                             {inv.couponCode ? (
@@ -654,7 +694,7 @@ function BillingPageInner() {
                           </td>
                           <td className="py-3 px-3 whitespace-nowrap">
                             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                              ● Paid
+                              Paid
                             </span>
                           </td>
                         </tr>
@@ -682,7 +722,7 @@ function BillingPageInner() {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary">
-                  ★ Most Popular
+                  Most Popular
                 </span>
                 <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
                   Save 25% Annually
@@ -734,7 +774,7 @@ function BillingPageInner() {
                   disabled={subscription.isCapReached || subscription.allocatedQuota >= 10000}
                 >
                   <PlusCircle size={14} />
-                  {subscription.isCapReached ? "10,000 Max Quota Reached" : "Top-Up Quota (+1,000 Links)"}
+                  {subscription.isCapReached ? "10,000 Max Quota Reached" : "Top-Up Quota (+1,000 Links • $5)"}
                 </Button>
               ) : (
                 <Button
@@ -900,7 +940,7 @@ function BillingPageInner() {
               >
                 <div className="flex items-center justify-between font-bold">
                   <span>
-                    🎉 Code &quot;{appliedCoupon.code}&quot; Applied for {selectedCycle === "yearly" ? "Yearly" : "Monthly"} Plan!
+                    Code &quot;{appliedCoupon.code}&quot; Applied for {selectedCycle === "yearly" ? "Yearly" : "Monthly"} Plan!
                   </span>
                   <span>{appliedCoupon.discountPercent}% OFF</span>
                 </div>
@@ -963,7 +1003,7 @@ function BillingPageInner() {
               {upgradeMutation.isPending || isStripeLoading ? (
                 <>
                   <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                  جاري المعالجة...
+                  Processing...
                 </>
               ) : isFreeUpgrade ? (
                 <>
@@ -983,12 +1023,17 @@ function BillingPageInner() {
       <Dialog open={isTopUpModalOpen} onOpenChange={setIsTopUpModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-lg">
-              <PlusCircle className="text-primary w-5 h-5" />
-              Top-Up Short Link Points
-            </DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="flex items-center gap-2 text-lg">
+                <PlusCircle className="text-primary w-5 h-5" />
+                Top-Up Short Link Points
+              </DialogTitle>
+              <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                $5.00 One-time
+              </span>
+            </div>
             <DialogDescription className="text-xs">
-              Stack additional link quota onto your current 30-day cycle up to the 10,000 points maximum ceiling.
+              Stack an additional 1,000 links onto your current 30-day cycle up to the 10,000 points maximum ceiling.
             </DialogDescription>
           </DialogHeader>
 
@@ -999,8 +1044,12 @@ function BillingPageInner() {
                 <span className="font-mono font-semibold">{subscription.allocatedQuota?.toLocaleString()} links</span>
               </div>
               <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-medium">
-                <span>Adding:</span>
+                <span>Adding Capacity:</span>
                 <span className="font-mono font-bold">+1,000 links</span>
+              </div>
+              <div className="flex justify-between text-foreground font-medium">
+                <span className="text-muted-foreground">Price:</span>
+                <span className="font-mono font-bold text-foreground">$5.00 USD</span>
               </div>
               <div className="pt-2 border-t border-border flex justify-between font-bold text-sm">
                 <span>New Cycle Quota:</span>
@@ -1013,7 +1062,7 @@ function BillingPageInner() {
             <div className="flex items-center gap-2 p-2.5 rounded bg-primary/10 text-primary text-[11px]">
               <ShieldCheck size={16} className="shrink-0" />
               <span>
-                Maximum limit: <strong>10,000 links</strong>. Points added remain valid for the remainder of your active 30-day cycle.
+                Maximum limit: <strong>10,000 links</strong>. Secured checkout processed via Stripe. Points added remain valid for the remainder of your active 30-day cycle.
               </span>
             </div>
           </div>
@@ -1023,6 +1072,7 @@ function BillingPageInner() {
               variant="ghost"
               size="sm"
               onClick={() => setIsTopUpModalOpen(false)}
+              disabled={isTopUpLoading}
               className="text-xs"
             >
               Cancel
@@ -1030,10 +1080,15 @@ function BillingPageInner() {
             <Button
               size="sm"
               onClick={handleConfirmTopUp}
-              disabled={topUpMutation.isPending || subscription.allocatedQuota >= 10000}
-              className="text-xs gap-1.5"
+              disabled={isTopUpLoading || subscription.allocatedQuota >= 10000}
+              className="text-xs gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              {topUpMutation.isPending ? "Adding Points..." : "Confirm Top-Up (+1,000 Links)"}
+              <CreditCard size={14} />
+              {isTopUpLoading
+                ? "Redirecting to Stripe..."
+                : subscription.allocatedQuota >= 10000
+                ? "Maximum Limit Reached"
+                : "Pay $5.00 & Top-Up (+1,000 Links)"}
             </Button>
           </DialogFooter>
         </DialogContent>

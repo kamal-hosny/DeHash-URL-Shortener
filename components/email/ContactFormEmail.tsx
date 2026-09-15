@@ -39,7 +39,7 @@ export const ContactFormEmail: React.FC<Readonly<ContactFormEmailProps>> = ({
 
         {/* Main content */}
         <Section style={content}>
-          <Heading style={h1}>✉️ New Message Received</Heading>
+          <Heading style={h1}>New Message Received</Heading>
           
           <Text style={introText}>
             You have received a new contact form submission with the following details:
@@ -48,14 +48,14 @@ export const ContactFormEmail: React.FC<Readonly<ContactFormEmailProps>> = ({
           {/* Contact Information Card */}
           <Section style={infoCard}>
             <Section style={infoRow}>
-              <Text style={infoLabel}>👤 Full Name</Text>
+              <Text style={infoLabel}>Full Name</Text>
               <Text style={infoValue}>{firstName} {lastName}</Text>
             </Section>
             
             <Hr style={divider} />
             
             <Section style={infoRow}>
-              <Text style={infoLabel}>📧 Email Address</Text>
+              <Text style={infoLabel}>Email Address</Text>
               <Text style={infoValue}>{email}</Text>
             </Section>
             
@@ -63,7 +63,7 @@ export const ContactFormEmail: React.FC<Readonly<ContactFormEmailProps>> = ({
               <>
                 <Hr style={divider} />
                 <Section style={infoRow}>
-                  <Text style={infoLabel}>📱 Phone Number</Text>
+                  <Text style={infoLabel}>Phone Number</Text>
                   <Text style={infoValue}>{phone}</Text>
                 </Section>
               </>
@@ -72,14 +72,14 @@ export const ContactFormEmail: React.FC<Readonly<ContactFormEmailProps>> = ({
             <Hr style={divider} />
             
             <Section style={infoRow}>
-              <Text style={infoLabel}>📋 Subject</Text>
+              <Text style={infoLabel}>Subject</Text>
               <Text style={infoValue}>{subject}</Text>
             </Section>
           </Section>
 
           {/* Message Section */}
           <Section style={messageContainer}>
-            <Text style={messageLabel}>💬 Message Content</Text>
+            <Text style={messageLabel}>Message Content</Text>
             <Section style={messageBox}>
               <Text style={messageContent}>{message}</Text>
             </Section>

@@ -15,6 +15,21 @@ export async function POST(req: NextRequest) {
         { status: 401 }
       );
     }
+    const isAdmin = Boolean(
+      session?.user?.isAdmin ||
+      session?.user?.role === "ADMIN" ||
+      userEmail?.toLowerCase() === "ixonhosny@gmail.com"
+    );
+
+    if (!isAdmin) {
+      return NextResponse.json(
+        {
+          error:
+            "Top-Up link packages require payment through Stripe ($5.00 for +1,000 links). Please use the Stripe checkout button in the billing dashboard.",
+        },
+        { status: 403 }
+      );
+    }
 
     const body = await req.json().catch(() => ({}));
     const points = Number(body.points) || 1000;

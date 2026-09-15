@@ -5,6 +5,7 @@ import {
   createInvoice,
   incrementCouponUsage,
   getInvoices,
+  topUpUserQuota,
 } from "@/lib/storage/billing";
 import Stripe from "stripe";
 
@@ -47,11 +48,44 @@ export async function POST(req: NextRequest) {
         const meta = session.metadata || {};
         const userId = meta.userId;
         const userEmail = meta.userEmail || session.customer_email || undefined;
+        const couponCode = meta.couponCode || null;
+
+        // Handle Top-Up payment completion
+        if (meta.type === "TOPUP") {
+          const points = parseInt(meta.points || "1000", 10);
+          if (userId || userEmail) {
+            const invoices = await getInvoices();
+            const alreadyProcessed = invoices.some(
+              (inv) => inv.id === session.id || inv.id === `stripe_${session.id}`
+            );
+
+            if (!alreadyProcessed) {
+              await topUpUserQuota(userId || userEmail!, userEmail, points);
+
+              if (couponCode) {
+                await incrementCouponUsage(couponCode);
+              }
+
+              const amountPaid = (session.amount_total || 0) / 100;
+              await createInvoice({
+                userId: userId || userEmail!,
+                userEmail,
+                plan: "TOPUP",
+                amount: amountPaid,
+                originalAmount: amountPaid,
+                discountAmount: 0,
+                couponCode,
+                status: "paid",
+              });
+            }
+          }
+          break;
+        }
+
         const plan: "PRO" | "ENTERPRISE" =
           meta.plan === "ENTERPRISE" ? "ENTERPRISE" : "PRO";
         const billingCycle: "monthly" | "yearly" =
           meta.billingCycle === "yearly" ? "yearly" : "monthly";
-        const couponCode = meta.couponCode || null;
 
         if (userId || userEmail) {
           const invoices = await getInvoices();

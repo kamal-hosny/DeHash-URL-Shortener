@@ -16,7 +16,6 @@ export const siteConfig = {
   creator: "DeHash",
   publisher: "DeHash",
   keywords: [
-    // English Keywords
     "URL shortener",
     "link shortener",
     "custom short URLs",
@@ -32,13 +31,6 @@ export const siteConfig = {
     "branded short links",
     "secure link shortener",
     "DeHash",
-    // Arabic Keywords
-    "اختصار الروابط",
-    "تقصير الروابط",
-    "صانع باركود",
-    "توليد كود QR",
-    "تحليل الروابط والنقرات",
-    "روابط قصيرة مجانية",
   ],
   locale: "en_US",
 };

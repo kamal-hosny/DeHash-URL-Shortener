@@ -8,6 +8,8 @@ import {
   incrementCouponUsage,
   createInvoice,
   updateUserPlan,
+  getUserSubscription,
+  topUpUserQuota,
 } from "@/lib/storage/billing";
 
 export async function POST(req: NextRequest) {
@@ -18,12 +20,127 @@ export async function POST(req: NextRequest) {
 
     if (!userId && !userEmail) {
       return NextResponse.json(
-        { error: "You must be signed in to start a subscription" },
+        { error: "You must be signed in to proceed with checkout" },
         { status: 401 }
       );
     }
 
     const body = await req.json();
+    const isTopUp = body.type === "TOPUP" || body.plan === "TOPUP";
+
+    // Handle One-Time Paid Top-Up (+1,000 Links)
+    if (isTopUp) {
+      const sub = await getUserSubscription(userId || userEmail!, userEmail);
+      if (sub.plan === "FREE") {
+        return NextResponse.json(
+          { error: "You must have an active Pro plan to purchase top-up links. Please upgrade to Pro first." },
+          { status: 400 }
+        );
+      }
+      if (sub.allocatedQuota >= 10000) {
+        return NextResponse.json(
+          { error: "Maximum cap of 10,000 points reached. You cannot add more points at this time." },
+          { status: 400 }
+        );
+      }
+
+      const couponCode: string | undefined = body.couponCode?.trim();
+      let discountPercent = 0;
+      let validatedCouponName: string | null = null;
+
+      if (couponCode) {
+        const val = await validateCoupon(couponCode, "monthly");
+        if (val.valid && val.coupon) {
+          discountPercent = val.coupon.discountPercent;
+          validatedCouponName = val.coupon.code;
+        }
+      }
+
+      const topUpConfig = STRIPE_PRICES.TOPUP;
+
+      // 100% discount handling
+      if (discountPercent === 100) {
+        if (validatedCouponName) {
+          await incrementCouponUsage(validatedCouponName);
+        }
+        await topUpUserQuota(userId || userEmail!, userEmail, topUpConfig.points);
+        await createInvoice({
+          userId: userId || userEmail!,
+          userEmail,
+          plan: "TOPUP",
+          amount: 0,
+          originalAmount: topUpConfig.amount / 100,
+          discountAmount: topUpConfig.amount / 100,
+          couponCode: validatedCouponName,
+          status: "paid",
+        });
+
+        return NextResponse.json({
+          success: true,
+          isFree: true,
+          message: `100% discount applied! +${topUpConfig.points.toLocaleString()} links have been added to your cycle.`,
+          url: "/dashboard/billing?success=true&type=topup",
+        });
+      }
+
+      const stripe = getStripe();
+      if (!stripe || !isStripeConfigured()) {
+        return NextResponse.json(
+          {
+            error:
+              "Stripe is not yet configured. Please set your STRIPE_SECRET_KEY in your .env file to enable live payments.",
+            needsConfiguration: true,
+          },
+          { status: 503 }
+        );
+      }
+
+      const discountAmountCents = Math.round(
+        (topUpConfig.amount * discountPercent) / 100
+      );
+      const finalAmountCents = Math.max(
+        topUpConfig.amount - discountAmountCents,
+        50 // Stripe minimum charge
+      );
+
+      const baseUrl = siteConfig.url;
+
+      // One-time payment checkout session
+      const checkoutSession = await stripe.checkout.sessions.create({
+        payment_method_types: ["card"],
+        mode: "payment",
+        customer_email: userEmail || undefined,
+        line_items: [
+          {
+            price_data: {
+              currency: topUpConfig.currency,
+              product_data: {
+                name: topUpConfig.name,
+                description: topUpConfig.description,
+              },
+              unit_amount: finalAmountCents,
+            },
+            quantity: 1,
+          },
+        ],
+        metadata: {
+          type: "TOPUP",
+          userId: userId || userEmail!,
+          userEmail: userEmail || "",
+          points: String(topUpConfig.points),
+          couponCode: validatedCouponName || "",
+        },
+        success_url: `${baseUrl}/dashboard/billing?success=true&session_id={CHECKOUT_SESSION_ID}&type=topup`,
+        cancel_url: `${baseUrl}/dashboard/billing?canceled=true`,
+      });
+
+      return NextResponse.json({
+        success: true,
+        url: checkoutSession.url,
+        sessionId: checkoutSession.id,
+      });
+    }
+
     const plan: "PRO" | "ENTERPRISE" =
       body.plan === "ENTERPRISE" ? "ENTERPRISE" : "PRO";
     const billingCycle: "monthly" | "yearly" =

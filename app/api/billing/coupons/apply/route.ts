@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
         discountPercent: 100,
         plan: "PRO",
         billingCycle: targetCycle,
-        message: `🎉 Success! Code ${coupon.code} (100% OFF) activated. You now have full PRO access (${targetCycle === "yearly" ? "Yearly - 2,000 links/mo" : "Monthly - 1,000 links/mo"}) for FREE!`,
+        message: `Success! Code ${coupon.code} (100% OFF) activated. You now have full PRO access (${targetCycle === "yearly" ? "Yearly - 2,000 links/mo" : "Monthly - 1,000 links/mo"}) for FREE!`,
         coupon,
         invoice,
       });

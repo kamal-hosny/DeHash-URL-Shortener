@@ -20,7 +20,7 @@ export interface Invoice {
   id: string;
   userId: string;
   userEmail?: string;
-  plan: "PRO" | "ENTERPRISE" | "FREE";
+  plan: "PRO" | "ENTERPRISE" | "FREE" | "TOPUP";
   amount: number; // e.g. 0 or 12
   originalAmount: number;
   discountAmount: number;
@@ -287,7 +287,7 @@ export async function getUserInvoices(userId?: string, userEmail?: string): Prom
       id: inv.id,
       userId: inv.userId,
       userEmail: inv.userEmail || undefined,
-      plan: inv.plan as "PRO" | "ENTERPRISE" | "FREE",
+      plan: inv.plan as "PRO" | "ENTERPRISE" | "FREE" | "TOPUP",
       amount: inv.amount,
       originalAmount: inv.originalAmount,
       discountAmount: inv.discountAmount,
@@ -304,7 +304,7 @@ export async function getUserInvoices(userId?: string, userEmail?: string): Prom
 export async function createInvoice(data: {
   userId: string;
   userEmail?: string;
-  plan: "PRO" | "ENTERPRISE" | "FREE";
+  plan: "PRO" | "ENTERPRISE" | "FREE" | "TOPUP";
   amount: number;
   originalAmount: number;
   discountAmount: number;
@@ -335,7 +335,7 @@ export async function createInvoice(data: {
     id: inv.id,
     userId: inv.userId,
     userEmail: inv.userEmail || undefined,
-    plan: inv.plan as "PRO" | "ENTERPRISE" | "FREE",
+    plan: inv.plan as "PRO" | "ENTERPRISE" | "FREE" | "TOPUP",
     amount: inv.amount,
     originalAmount: inv.originalAmount,
     discountAmount: inv.discountAmount,
@@ -732,6 +732,6 @@ export async function topUpUserQuota(
   return {
     success: true,
     newQuota: updatedSub.allocatedQuota,
-    message: `🎉 Successfully added ${allowedAddition.toLocaleString()} links to your account! Current cycle quota: ${updatedSub.allocatedQuota.toLocaleString()} links.`,
+    message: `Successfully added ${allowedAddition.toLocaleString()} links to your account! Current cycle quota: ${updatedSub.allocatedQuota.toLocaleString()} links.`,
   };
 }

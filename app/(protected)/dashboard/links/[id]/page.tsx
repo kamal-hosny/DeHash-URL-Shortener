@@ -12,6 +12,7 @@ import {
   ArrowLeft,
   ExternalLink,
   Copy,
+  Activity,
 } from "@/assets/icons";
 import { Button } from "@/components/ui/button";
 import StatCard from "@/components/molecules/dashboard/StatCard";
@@ -244,7 +245,6 @@ export default function LinkAnalyticsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-semibold text-base text-foreground tracking-tight">
-                  Recent Visitors Log (أحدث الزيارات)
                   Recent Visitors Activity
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
@@ -253,7 +253,7 @@ export default function LinkAnalyticsPage() {
               </div>
               {analytics?.recentClicks && analytics.recentClicks.length > 0 && (
                 <span className="text-xs font-mono font-medium px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                  ● Live Active
+                  Live Active
                 </span>
               )}
             </div>
@@ -295,8 +295,8 @@ export default function LinkAnalyticsPage() {
                 </table>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground space-y-1.5">
-                <span className="text-2xl">⚡</span>
+              <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground space-y-2">
+                <Activity className="w-8 h-8 text-muted-foreground/40 mb-1" />
                 <p className="text-sm font-medium">No live visitor events yet</p>
                 <p className="text-xs text-muted-foreground/80">
                   Share this link to start capturing real-time visitor streams

@@ -112,7 +112,7 @@ export default function CouponsPage() {
 
       if (res.redeemed) {
         toast({
-          title: "🎉 Subscription Activated Free!",
+          title: "Subscription Activated Free!",
           description: res.message,
         });
         setRedeemCode("");
@@ -413,7 +413,7 @@ export default function CouponsPage() {
                         : "bg-muted/40 border-border text-muted-foreground hover:bg-muted"
                     }`}
                   >
-                    📅 Yearly ($9/mo • 2,000 links)
+                    Yearly ($9/mo • 2,000 links)
                   </button>
                   <button
                     type="button"
@@ -424,7 +424,7 @@ export default function CouponsPage() {
                         : "bg-muted/40 border-border text-muted-foreground hover:bg-muted"
                     }`}
                   >
-                    🗓️ Monthly ($12/mo • 1,000 links)
+                    Monthly ($12/mo • 1,000 links)
                   </button>
                   <button
                     type="button"
@@ -435,7 +435,7 @@ export default function CouponsPage() {
                         : "bg-muted/40 border-border text-muted-foreground hover:bg-muted"
                     }`}
                   >
-                    🌐 All Plans
+                    All Plans
                   </button>
                 </div>
               </div>
@@ -540,15 +540,15 @@ export default function CouponsPage() {
                         <div className="mt-1">
                           {c.applicableCycle === "yearly" ? (
                             <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                              📅 Yearly Only (2,000 links/mo)
+                              Yearly Only (2,000 links/mo)
                             </span>
                           ) : c.applicableCycle === "monthly" ? (
                             <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                              🗓️ Monthly Only (1,000 links/mo)
+                              Monthly Only (1,000 links/mo)
                             </span>
                           ) : (
                             <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
-                              🌐 All Plans (Monthly & Yearly)
+                              All Plans (Monthly & Yearly)
                             </span>
                           )}
                         </div>
@@ -636,7 +636,7 @@ export default function CouponsPage() {
       {/* Explanatory Info Card */}
       <Card className="bg-muted/20 border-border">
         <CardHeader>
-          <CardTitle className="text-base">💡 How 100% Free Subscriptions Work</CardTitle>
+          <CardTitle className="text-base">How 100% Free Subscriptions Work</CardTitle>
           <CardDescription className="text-xs leading-relaxed space-y-1">
             <span className="block">
               1. Any promo code configured with a <strong>100% discount</strong> completely waives the subscription price ($0.00).
