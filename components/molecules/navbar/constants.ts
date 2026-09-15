@@ -18,7 +18,7 @@ export type UserMenuItem =
 
 export const USER_MENU: UserMenuItem[] = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Settings", href: "/settings", icon: Settings },
-    { name: "Earnings", href: "/earnings", icon: DollarSign },
+    // { name: "Settings", href: "/settings", icon: Settings },
+    // { name: "Earnings", href: "/earnings", icon: DollarSign },
     { name: "Sign out", action: "signout", icon: LogOut },
 ];
